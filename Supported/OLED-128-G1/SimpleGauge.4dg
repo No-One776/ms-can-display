@@ -1,0 +1,233 @@
+#platform "GOLDELOX-GFX2"
+
+/*       
+
+	Slave gauge display
+	
+	External controller sends commands to set the gauge title, max scale and data.
+	
+	
+
+*/
+
+#inherit "4DGL_16bitColours.fnc"
+
+
+#constant RADIUS 60
+#constant CENTER 64
+
+#constant V 0
+#constant C 1
+
+#constant START_CHAR 0x55
+#constant END_CHAR 0xAA
+
+#constant SEND_GAUGE_VALUE 0
+#constant SET_GAUGE_TITLE 1
+#constant SET_GAUGE_MAX 2
+
+
+
+//Necessary Globals
+var oldNeedleAngle;
+
+//serial buffer (Local arrays not supported in this release of the compiler)
+var combuf[10];    // 1 var = 2 bytes
+var databuf[10];
+
+var inputVoltage;
+
+var maxValue;
+
+
+// draw the line for a gauge hand
+func DrawNeedle(var length, var angle, var color)
+    var targetX, targetY;
+
+    gfx_Set(OBJECT_COLOUR, color);
+    gfx_MoveTo(CENTER, CENTER);             // reset the centrpoint
+    gfx_OrbitInit(&targetX, &targetY);      // target variables
+    gfx_Orbit(angle, length);
+    gfx_Line(CENTER, CENTER, targetX, targetY, color);
+
+endfunc
+
+//clear old needle value, draw new needle, draw text
+func DrawNeedleValue(var value, var max, var DP)
+    var k;
+    var tempAngle;
+
+    k := 30000 / max;                     // needle step ratio
+
+    tempAngle := value * k;
+
+    tempAngle := tempAngle / 100;
+
+    tempAngle := tempAngle - 240;       //start at beginning of gauge
+
+    if(oldNeedleAngle != tempAngle)
+
+        DrawNeedle(RADIUS-5, oldNeedleAngle, BLACK); //clear old needle
+        DrawNeedle(RADIUS-5, tempAngle, WHITE);      //write new needle
+        oldNeedleAngle := tempAngle;
+
+    endif
+
+    gfx_Set(PEN_SIZE, 0);
+    gfx_Circle( CENTER, CENTER, 5, WHITE ); //redraw centre circle
+
+    txt_FGcolour(WHITE);
+    gfx_MoveTo(50, 35);
+
+    if(DP == 0)
+        print([UDEC4Z]value,"\n");                  // show current value on gauge
+    else if(DP == 1)
+        print([UDEC3Z]value/10,".",[UDEC1Z]value%10);
+    else if(DP == 3)
+        gfx_MoveTo(45, 35);
+        print([UDEC2Z]value/1000,".",[UDEC3Z]value%1000);
+
+    endif
+
+
+endfunc
+
+
+func DrawGaugeFace()
+    var n,k;
+    var x1, y1, x2, y2;
+    var colr;
+
+    gfx_Cls();
+
+    gfx_Set(PEN_SIZE, 1);
+    gfx_Circle( CENTER, CENTER, RADIUS, WHITE );
+
+    gfx_MoveTo(CENTER, CENTER);
+
+    n := -90;                                   // 12 o'clock position
+    while (n<270)
+        gfx_OrbitInit(&x2, &y2);            // outer target
+        gfx_Orbit(n, RADIUS);                    // store the position
+
+        if (n >= 0 && n < 60)
+                k := RADIUS-5;
+                colr := RED;
+        else if(n >= -90 && n < 0)
+                k := RADIUS-4;
+                colr := ORANGE;
+        else if(n >= 120 && n < 270)
+                k := RADIUS-3;
+                colr := YELLOW;
+        endif
+
+        gfx_OrbitInit(&x1, &y1);            // inner target
+        gfx_Orbit(n, k);                    // store the position
+
+        gfx_Line(x1,y1,x2,y2,colr);
+        n := n + 30;                        // mark each 30 degreees
+    wend
+
+    gfx_Set(PEN_SIZE, 0);
+    gfx_Rectangle(0, 116, 128, 128, BLACK);
+
+endfunc
+
+
+
+func main()
+
+    var secl;
+    var len;
+    var i;
+    var command;
+    var value;
+    var dataisgood;
+
+
+    setbaud(BAUD_115200);
+    DrawGaugeFace();
+    DrawNeedleValue(0, 255, 0);
+
+    pin_Set(ANALOGUE_8, 0);
+
+    pin_HI(1);
+
+    repeat
+        com_Init(combuf, 10, 0);
+        pause(20);
+
+        if(com_Count() > 0)
+
+            secl := serin();
+            if(secl == START_CHAR)
+                command := serin();
+                len := serin();
+                i := 0;
+                while(i < len)
+                    databuf[i] := serin();
+                    i := i + 1;
+                wend
+                secl := serin();
+
+                dataisgood := 0;
+                if(secl == END_CHAR)
+                    dataisgood := 1;
+                else
+                    dataisgood := 0;
+                endif
+
+            endif
+        endif
+
+
+
+
+        if(dataisgood == 1)
+
+            if(command == SEND_GAUGE_VALUE)
+
+                i := 0;
+                value := 0;
+                if (len == 1)
+                    value := databuf[0];
+                else if(len == 2)
+                    value := databuf[1];
+                    value := value + databuf[0] * 256;
+                endif
+
+                DrawNeedleValue(value, maxValue, 0);
+                    //com_Init(combuf, 10, 0);
+            else if(command == SET_GAUGE_TITLE)
+
+                gfx_MoveTo(50, 110);
+                i := 0;
+                while(i < len)
+                    print([CHR] databuf[i]);
+                    i := i + 1;
+                wend
+            else if(command == SET_GAUGE_MAX)
+
+                maxValue := databuf[0] * 256;
+                maxValue := maxValue + databuf[1];
+
+            endif
+
+        endif
+
+
+        //Auto shut off routine:
+        inputVoltage := pin_Read(0);
+        if(inputVoltage < 40)
+            gfx_Set(CONTRAST, 0);
+            pin_LO(1);
+        endif
+
+
+
+    forever
+
+endfunc
+//==================================================================================================
+
+
