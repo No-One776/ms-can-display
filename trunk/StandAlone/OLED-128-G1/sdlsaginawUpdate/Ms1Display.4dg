@@ -1,0 +1,473 @@
+#platform "GOLDELOX-GFX2"
+
+/*       Megasquirt 1 Data Display
+
+         Sends 'R' command to MS1 then waits for buffer full (indicating all 39 bytes were received), displays current item directly out of the receive buffer.
+         Supports up/down buttons to change displayed item.  Pressing both buttons swaps between list (item 1) and current item.
+         Display is powered down safely when MS1 is not responding, in case battery power is eventually removed.
+
+         Adapted from 4DGL Clock Demo Application
+         -- GOLDELOX Platform --
+*/
+
+#inherit "4DGL_16bitColours.fnc"
+#inherit "MegasquirtLookupTables.fnc"
+
+// nominal 129 80 61
+#constant SWITCH_1_ADC_LOW 119
+#constant SWITCH_1_ADC_HI 139
+#constant SWITCH_2_ADC_LOW 70
+#constant SWITCH_2_ADC_HI 90
+#constant SWITCH_12_ADC_LOW 55
+#constant SWITCH_12_ADC_HI 65
+
+#constant RADIUS 60
+#constant CENTER 64
+
+//#constant V 0
+//#constant C 1
+
+#constant SCREEN_CONTRAST 7
+
+#constant MS_ON_DELAY 10
+#constant MS_OFF_DELAY 100
+#constant MS_TIMEOUT 50
+#constant MS_SHUTDOWN 30
+#constant MS_QUERY_SIZE 39
+
+// MS1 offsets into msData array (lsb) (mask)
+#constant MS_SECL 0
+#constant MS_ENGINE 1
+#constant MS_MAPADC 2
+#constant MS_CLTADC 3
+#constant MS_BATADC 4
+#constant MS_EGOCOR 5
+#constant MS_WARMEN 6
+#constant MS_PW1 7
+#constant MS_BAROCOR 8
+#constant MS_VECURR1 9
+#constant MS_VECURR2 10
+#constant MS_ITIMEH 11
+#constant MS_ADV 12
+#constant MS_FUELADC 13
+#constant MS_CLTIATANG 14
+#constant MS_EGOCORR 15
+#constant MS_PORTB 16
+#constant MS_PORTD 17
+#constant MS_TPSLAST 18
+#constant MS_BCDC 19
+
+// MS1 offsets into msData array (msb) (shift then mask)
+
+#constant MS_SQUIRT 0
+#constant MS_BAROADC 1
+#constant MS_MATADC 2
+#constant MS_TPSADC 3
+#constant MS_EGOADC 4
+#constant MS_AIRCOR 5
+#constant MS_RPM100 6
+#constant MS_ACCELEN 7
+#constant MS_GAMMAEN 8
+#constant MS_PW2 9
+#constant MS_IDLEDC 10
+#constant MS_ITIMEL 11
+#constant MS_AFRTARG 12
+#constant MS_EGTADC 13
+#constant MS_KNOCKANG 14
+#constant MS_PORTA 15
+#constant MS_PORTC 16
+#constant MS_STACKL 17
+#constant MS_ITIMEX 18
+
+//Necessary Globals
+var oldNeedleAngle;
+var menuItem;
+var menuOldItem;
+var menuFlipItem;
+
+// Button flags
+var btnDown;
+var btnUp;
+var btnBoth;
+var btnDebounce;
+
+
+//Serial data from MS1
+var msData[20];    // 20 vars = 40 bytes (39 used)
+
+var msQuery;       // query timeout, at 0 the MS1 is queried (again)
+var msLost;        // no response counter
+
+func checkSwitches()
+
+    var ADCtemp;
+    ADCtemp := pin_Read(0);
+
+    if (ADCtemp > SWITCH_1_ADC_LOW && ADCtemp < SWITCH_1_ADC_HI && btnBoth == 0 && btnDown == 0)
+        // up button pressed
+        btnUp := 1;
+        btnDebounce := 0;
+    else if (ADCtemp > SWITCH_2_ADC_LOW && ADCtemp < SWITCH_2_ADC_HI && btnBoth == 0)
+        // down button pressed
+        btnDown := 1;
+        btnUp := 0;
+        btnDebounce := 0;
+    else if (ADCtemp > SWITCH_12_ADC_LOW && ADCtemp < SWITCH_12_ADC_HI)
+        // both buttons pressed
+        btnBoth := 1;
+        btnDown := 0;
+        btnUp := 0;
+        btnDebounce := 0;
+    else
+        // no buttons pressed, see if any were released
+        if (btnBoth > 0 || btnDown > 0 || btnUp > 0)
+            if (btnDebounce == 0)
+                // allow one more polling for bebounce
+                btnDebounce := 1;
+            else
+                btnDebounce := 0;
+                if (btnBoth > 0)
+                    // both pressed, flip between first and previous items
+                    if (menuFlipItem == 1)
+                        menuFlipItem := menuItem;
+                        menuItem := 1;
+                    else
+                        menuItem := menuFlipItem;
+                        menuFlipItem := 1;
+                    endif
+                else if (btnDown > 0)
+                    // down pressed, move down an item
+                    if (menuItem > 1)
+                        menuItem -= 1;
+                    endif
+                else if (btnUp > 0)
+                    // up pressed, move up an item
+                    if (menuItem < 9)
+                        menuItem++;
+                    endif
+                endif
+
+                btnUp := 0;
+                btnDown := 0;
+                btnBoth := 0;
+            endif
+        endif
+    endif
+endfunc
+
+// draw the line for a gauge hand
+func DrawNeedle(var length, var angle, var color)
+    var targetX, targetY;
+
+    gfx_Set(OBJECT_COLOUR, color);
+    gfx_MoveTo(CENTER, CENTER);             // reset the centrpoint
+    gfx_OrbitInit(&targetX, &targetY);      // target variables
+    gfx_Orbit(angle, length);
+    gfx_Line(CENTER, CENTER, targetX, targetY, color);
+
+endfunc
+
+//clear old needle value, draw new needle, draw text
+func DrawNeedleValue(var value, var min, var max, var DP)
+    var k;
+    var tempAngle;
+
+    k := 30000 / (max-min);                     // needle step ratio
+
+    if (value < min)
+        tempAngle := min * k;
+    else
+        tempAngle := (value-min) * k;
+    endif
+    tempAngle := tempAngle / 100;
+    tempAngle := tempAngle - 240;       //start at beginning of gauge
+
+    // clear old needle if it moved
+    if(oldNeedleAngle != tempAngle)
+        DrawNeedle(RADIUS-5, oldNeedleAngle, BLACK); //clear old needle
+        gfx_Set(PEN_SIZE, 0);
+        gfx_Circle( CENTER, CENTER, 5, WHITE ); //redraw centre circle
+    endif
+
+    // write the value in text
+    txt_FGcolour(LIME);
+    gfx_MoveTo(45, 35);
+    if (value >= 0)
+        print (" ");
+    endif
+    if(DP == 0)
+        print([DEC4ZB]value);                  // show current value on gauge
+    else if(DP == 1)
+        print([DEC3ZB]value/10,".",[UDEC1Z]value%10);
+    else if(DP == 3)
+        gfx_MoveTo(45, 35);
+        print([DEC2ZB]value/1000,".",[UDEC3Z]value%1000);
+    endif
+    txt_FGcolour(WHITE);
+
+    // rewrite needle (new angle or text may have messed it up)
+    DrawNeedle(RADIUS-5, tempAngle, WHITE);      //write new needle
+    oldNeedleAngle := tempAngle;
+
+endfunc
+
+func DrawGaugeFace()
+    var n,k;
+    var x1, y1, x2, y2;
+    var colr;
+
+    gfx_Cls();
+
+    gfx_Set(PEN_SIZE, 1);
+    gfx_Circle( CENTER, CENTER, RADIUS, WHITE );
+
+    gfx_MoveTo(CENTER, CENTER);
+
+    n := -90;                                   // 12 o'clock position
+    while (n<270)
+        gfx_OrbitInit(&x2, &y2);            // outer target
+        gfx_Orbit(n, RADIUS);                    // store the position
+
+        if (n >= 0 && n < 60)
+                k := RADIUS-5;
+                colr := RED;
+        else if(n >= -90 && n < 0)
+                k := RADIUS-4;
+                colr := ORANGE;
+        else if(n >= 120 && n < 270)
+                k := RADIUS-3;
+                colr := YELLOW;
+        endif
+
+        gfx_OrbitInit(&x1, &y1);            // inner target
+        gfx_Orbit(n, k);                    // store the position
+
+        gfx_Line(x1,y1,x2,y2,colr);
+        n := n + 30;                        // mark each 30 degreees
+    wend
+
+    gfx_Set(PEN_SIZE, 0);
+    gfx_Rectangle(0, 116, 128, 128, BLACK);
+
+endfunc
+
+func displayGauge()
+
+    var itemp;
+
+    if( menuItem != menuOldItem)
+        if( menuItem == 1)
+            gfx_Cls();
+        else
+            DrawGaugeFace();
+        endif
+        menuOldItem := menuItem;
+    endif
+
+    if(menuItem == 1)
+        gfx_MoveTo(0, 0);
+        txt_FGcolour(LIME);
+        itemp := msData[MS_SECL] & 255;
+        print("secl:   ",[UDEC3ZB]itemp,"\n");
+        txt_FGcolour(WHITE);
+        itemp := MAP_TABLE[(msData[MS_MAPADC] & 255)] & 255;
+        print("MAP:    ",[UDEC3ZB]itemp,"\n");
+        txt_FGcolour(RED);
+        itemp := MAT_TABLE[((msData[MS_MATADC] >> 8) & 255)] & 255;
+        itemp -= 40;
+        print("MAT:    ",[DEC3ZB]itemp," F \n");
+        txt_FGcolour(LIME);
+        itemp := CLT_TABLE[(msData[MS_CLTADC] & 255)] & 255;
+        itemp -= 40;
+        print("CLT:    ",[DEC3ZB]itemp," F \n");
+        txt_FGcolour(WHITE);
+        itemp := (msData[MS_TPSADC] >> 8) & 255;
+        print("tpsADC: ",[UDEC3ZB]itemp,"\n");
+        txt_FGcolour(RED);
+        itemp := (msData[MS_BATADC] & 255) * 30;
+        itemp := itemp / 25;
+        print("Bat:    ",[UDEC2ZB]itemp/10,".",[UDEC1Z]itemp%10," Vdc\n");
+        txt_FGcolour(LIME);
+        itemp := EGO_TABLE[(msData[MS_EGOADC] & 255)];
+        print("AFR:    ",[UDEC2ZB]itemp/1000,".",[UDEC3Z]itemp%1000,"\n");
+        txt_FGcolour(WHITE);
+        itemp := ((msData[MS_RPM100] >> 8) & 255) * 100;
+        print("RPM:    ",[UDEC4ZB]itemp," Rpm\n");
+        txt_FGcolour(RED);
+        itemp := (msData[MS_ENGINE] & 3);
+        if (itemp == 0)
+            print("Engine: OFF  \n");
+        else if (itemp == 1)
+            print("Engine: RUN  \n");
+        else
+            print("Engine: CRANK\n");
+        endif
+        txt_FGcolour(LIME);
+        itemp := (msData[MS_ENGINE] & 12);
+        if (itemp == 0)
+            print("Warm:   OFF  \n");
+        else if (itemp == 4)
+            print("Warm:   START\n");
+        else
+            print("Warm:   ON   \n");
+        endif
+        txt_FGcolour(WHITE);
+        itemp := (msData[MS_ENGINE] & 48);
+        if (itemp == 0)
+            print("Accel:  OFF  \n");
+        else if (itemp == 16)
+            print("Accel:  ACCEL\n");
+        else
+            print("Accel:  DECEL\n");
+        endif
+        txt_FGcolour(WHITE);
+
+    else if(menuItem == 2)
+        gfx_MoveTo(50, 110);
+        txt_FGcolour(RED);
+        print("secl");
+        txt_FGcolour(WHITE);
+        itemp := msData[MS_SECL] & 255;
+        DrawNeedleValue(itemp, 0, 255, 0);
+
+    else if(menuItem == 3)
+        gfx_MoveTo(50, 110);
+        txt_FGcolour(RED);
+        print("MAP ");
+        txt_FGcolour(WHITE);
+        itemp := MAP_TABLE[(msData[MS_MAPADC] & 255)] & 255;
+        DrawNeedleValue(itemp, MAP_GAUGE_MIN, MAP_GAUGE_MAX, 0);
+
+    else if(menuItem == 4)
+        gfx_MoveTo(50, 110);
+        txt_FGcolour(RED);
+        print("MAT");
+        txt_FGcolour(WHITE);
+        itemp := MAT_TABLE[((msData[MS_MATADC] >> 8) & 255)] & 255;
+        itemp += MAT_OFFSET;
+        DrawNeedleValue(itemp, MAT_GAUGE_MIN, MAT_GAUGE_MAX, 0);
+
+    else if(menuItem == 5)
+        gfx_MoveTo(50, 110);
+        txt_FGcolour(RED);
+        print("CLT");
+        txt_FGcolour(WHITE);
+        itemp := CLT_TABLE[(msData[MS_CLTADC] & 255)] & 255;
+        itemp += CLT_OFFSET;
+        DrawNeedleValue(itemp, CLT_GAUGE_MIN, CLT_GAUGE_MAX, 0);
+
+    else if(menuItem == 6)
+        gfx_MoveTo(45, 110);
+        txt_FGcolour(RED);
+        print("tpsADC");
+        txt_FGcolour(WHITE);
+        itemp := (msData[MS_TPSADC] >> 8) & 255;
+        DrawNeedleValue(itemp, 0, 255, 0);
+
+    else if(menuItem == 7)
+        itemp := (msData[MS_BATADC] & 255) * 30;
+        itemp := itemp / 25;
+        gfx_MoveTo(55, 110);
+        txt_FGcolour(RED);
+        print("BAT");
+        txt_FGcolour(WHITE);
+        DrawNeedleValue(itemp, 100, 200, 1);
+
+    else if(menuItem == 8)
+        gfx_MoveTo(55, 110);
+        txt_FGcolour(RED);
+        print("AFR");
+        txt_FGcolour(WHITE);
+        itemp := EGO_TABLE[(msData[MS_EGOADC] & 255)];
+        DrawNeedleValue(itemp, AFR_GAUGE_MIN, AFR_GAUGE_MAX, 3);
+
+    else if(menuItem == 9)
+        gfx_MoveTo(55, 110);
+        txt_FGcolour(RED);
+        print("RPM");
+        txt_FGcolour(WHITE);
+        itemp := ((msData[MS_RPM100] >> 8) & 255)*100;
+        DrawNeedleValue(itemp, 0, 10000, 0);
+
+    endif
+
+endfunc
+
+
+func main()
+    var itemp;
+
+    setbaud(BAUD_9600);
+    gfx_Set(CONTRAST, SCREEN_CONTRAST);
+    msQuery := 0;
+    msLost := 0;
+    menuItem := 1;
+    menuOldItem := 0;
+    menuFlipItem := 1;
+
+    pin_Set(ANALOGUE_8, 0);
+
+    DrawGaugeFace();
+    gfx_MoveTo(50, 110);
+    txt_FGcolour(RED);
+    print("4DGL");
+    txt_FGcolour(WHITE);
+    for (itemp := -128 ; itemp <= 128 ; itemp+=8)
+        DrawNeedleValue(itemp, -128, 128, 0);
+        pause(10);
+    next
+    for (itemp := 128 ; itemp >= -128 ; itemp-=16)
+        DrawNeedleValue(itemp, -128, 128, 0);
+        pause(10);
+    next
+    gfx_Cls();
+    txt_FGcolour(WHITE);
+    gfx_MoveTo(0, 0);
+    print("Polling EFI...\n");
+
+    repeat
+
+        if (msLost >= MS_SHUTDOWN)
+            pause(MS_OFF_DELAY);
+        else
+            pause(MS_ON_DELAY);
+            checkSwitches();
+        endif
+        if (msQuery == 0)
+            var serTemp;
+            repeat
+                serTemp := serin();
+            until (serTemp == -1);
+            com_Init(msData, MS_QUERY_SIZE, 0);
+            serout(82);                                 //Write a "R" to the megasquirt (it will reply back with the 39 bytes of data)
+            msQuery := MS_TIMEOUT;
+        else
+           msQuery--;
+           if (com_Full())
+                com_Reset();
+                if (msLost >= MS_SHUTDOWN)
+                    gfx_Set(CONTRAST, SCREEN_CONTRAST);
+                endif
+                msLost := 0;
+                displayGauge();
+                msQuery := 0;
+           else if (msQuery == 0)
+                if (msLost <= MS_SHUTDOWN)
+                    msLost++;
+                    if (msLost == MS_SHUTDOWN)
+                        gfx_Set(CONTRAST, 0);
+//                    else
+//                        var ADCtemp;
+//                        ADCtemp := pin_Read(0);
+//                        txt_FGcolour(WHITE);
+//                        gfx_MoveTo(0, 0);
+//                        print("buttonADC:   ",[UDEC5Z]ADCtemp,"\n");
+                    endif
+                endif
+           endif
+        endif
+
+    forever
+
+endfunc
+//==================================================================================================
