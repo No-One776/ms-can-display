@@ -12,11 +12,15 @@ Reads switches over one wire bus
 
 Sends commands to display data on 4dgl display.
 
+Controls a small low side driver to switch the horn relay.
 
  */
 
 #define SWITCH_UP 6
 #define SWITCH_DOWN  3
+#define HORN 5
+
+#define HORN_OUTPUT_PIN 38
 
 MegasquirtDataObject secl("SECL",1,1,1,1,255);
 MegasquirtDataObject rpm("RPM",2,6,1,1,8000);
@@ -45,7 +49,7 @@ byte Menu;
 void setup() {                
   // initialize the digital pin as an output.
   // Pin 13 has an LED connected on most Arduino boards:
-  pinMode(36, OUTPUT);
+  pinMode(HORN_OUTPUT_PIN, OUTPUT);
   CAN.set_baudrate(500);
   CAN.init(0);  
   
@@ -61,7 +65,6 @@ void setup() {
   
   delay(2500);
 
-  digitalWrite(36, HIGH);   // set the LED on
   
   Menu = 1;
 }
@@ -93,7 +96,7 @@ void loop()
   Serial1.flush();
 
   //read switches and build menu.
-  
+
   if(newSwitchState != oldSwitchState)
   {
     switch(newSwitchState)
@@ -105,6 +108,13 @@ void loop()
       case SWITCH_DOWN:
       Menu--;
       break;
+      
+      case HORN:
+      digitalWrite(HORN_OUTPUT_PIN, 1);
+      break;
+      
+      default:
+      digitalWrite(HORN_OUTPUT_PIN, 0);
     }
   }
 
