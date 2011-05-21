@@ -19,8 +19,10 @@ Controls a small low side driver to switch the horn relay.
 #define SWITCH_UP 6
 #define SWITCH_DOWN  3
 #define SWITCH_HORN 5
+#define ALL_SWITCH_PRESSED 0
 
 #define HORN_OUTPUT_PIN 38
+#define DISPLAY_RESET_PIN 39
 
 DisplayCommand Gauge;
 
@@ -86,8 +88,15 @@ void loop()
 {
   oldSwitchState = newSwitchState;
   newSwitchState = Serial1.read();
+  //To fix - somtimes does not read the switches properly:
+  if(newSwitchState == 255)
+    newSwitchState = oldSwitchState;
+  
+  
   Serial1.flush();
 
+  //Serial.write(oldSwitchState);
+  //Serial.write(newSwitchState);
   //read switches and build menu.
   
   if(newSwitchState != oldSwitchState)
@@ -95,8 +104,12 @@ void loop()
     switch(newSwitchState)
     {
       case SWITCH_UP:
-      Menu++;
+          Menu++;
+          if(Menu > 3)
+            Menu = 0;
+          
 	  digitalWrite(HORN_OUTPUT_PIN, 0);
+          digitalWrite(DISPLAY_RESET_PIN, 0);
       break;
     
       case SWITCH_DOWN:
@@ -106,20 +119,27 @@ void loop()
         Menu--;
       
       digitalWrite(HORN_OUTPUT_PIN, 0);
+      digitalWrite(DISPLAY_RESET_PIN, 0);
       break;
 
       case SWITCH_HORN:
       digitalWrite(HORN_OUTPUT_PIN, 1);
+      digitalWrite(DISPLAY_RESET_PIN, 0);
+      break;
+      
+      case ALL_SWITCH_PRESSED:
+      digitalWrite(DISPLAY_RESET_PIN, 1);
+      digitalWrite(HORN_OUTPUT_PIN, 0);
       break;
       
       default:
       digitalWrite(HORN_OUTPUT_PIN, 0);
+      digitalWrite(DISPLAY_RESET_PIN, 0);
     }
   }
 
   
-  if(Menu > 3)
-    Menu = 0;
+
      
  
   
@@ -148,6 +168,6 @@ void loop()
    Gauge._Data = (char*)rx_remote_msg.pt_data;
    Gauge.SerialSend();   
  
-  delay(50);
+   delay(50);
   
 }
