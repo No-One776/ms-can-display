@@ -8,10 +8,3 @@ http://www.tincannetwork.com/files/Overview.png
 Hardware schematic here:
 
 http://code.google.com/p/ms-can-display/downloads/detail?name=Supported%20V2.0%20Schematic.pdf&can=2
-
-= Vehicle Connector =
-
-
-= Display Connector =
-
-test
