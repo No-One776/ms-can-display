@@ -1,14 +1,15 @@
-#summary One-sentence summary of this page.
+#summary V2.0 Hardware description.
 #labels Featured
 
-= Introduction =
+= Overview =
 
-Add your content here.
+http://www.tincannetwork.com/files/Overview.png
+
+Hardware schematic here:
+
+http://code.google.com/p/ms-can-display/downloads/detail?name=Supported%20V2.0%20Schematic.pdf&can=2
+
+= Vehicle Connector =
 
 
-= Details =
-
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+= Display Connector =
