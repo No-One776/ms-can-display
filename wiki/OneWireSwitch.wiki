@@ -1,0 +1,5 @@
+#summary Concept begind the one wire switch interface
+#labels Featured
+= Overview Drawing =
+
+http://www.tincannetwork.com/files/HowTheInputsWork.PNG
