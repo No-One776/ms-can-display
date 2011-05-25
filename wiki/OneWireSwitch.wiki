@@ -1,4 +1,4 @@
-#summary Concept begind the one wire switch interface
+#summary Concept behind the one wire switch interface
 #labels Featured
 = Overview Drawing =
 
