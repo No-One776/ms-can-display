@@ -9,6 +9,6 @@ http://www.tincannetwork.com/files/Overview.png
 
 http://www.tincannetwork.com/files/HardwareV2.0WiringDiagram.png
 
-Hardware schematic here:
+= Hardware schematic =
 
 http://www.tincannetwork.com/files/HardwareV2.0Schematic.png
