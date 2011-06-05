@@ -1,4 +1,4 @@
-#Description of OLED display auto shutdown routine.
+#summary Description of OLED display auto shutdown routine.
 
 The OLED displays can be damaged if they are repeatedly powered off without being placed in a safe state by software.
 
@@ -9,3 +9,5 @@ http://www.tincannetwork.com/files/AutoShutdown1.PNG
 The second IO pin is used to check if the display is shut down before power drops.
 
 http://www.tincannetwork.com/files/AutoShutdown2.PNG
+
+For more details see the display source code.
