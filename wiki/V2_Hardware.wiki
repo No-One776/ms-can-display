@@ -3,7 +3,7 @@
 
 = Overview =
 
-http://www.tincannetwork.com/files/Overview.png
+http://www.tincannetwork.com/files/V2HardwareOverviewAnnot.png
 
 = External Wiring Diagram =
 
