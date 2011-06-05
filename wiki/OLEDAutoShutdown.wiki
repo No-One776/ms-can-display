@@ -1,13 +1,11 @@
 #Description of OLED display auto shutdown routine.
 
-= Introduction =
+The OLED displays can be damaged if they are repeatedly powered off without being placed in a safe state by software.
 
-Add your content here.
+The method used on this project is to provide sufficient bulk capacitance for the display to sense the supply drop and perform the required shut down routine before the input voltage drops too low. 
 
+http://www.tincannetwork.com/files/AutoShutdown1.PNG
 
-= Details =
+The second IO pin is used to check if the display is shut down before power drops.
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+http://www.tincannetwork.com/files/AutoShutdown2.PNG
