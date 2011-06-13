@@ -1,4 +1,15 @@
 #summary Instructions for setting up the Arduino IDE and flashing code.
 #labels Featured
 
-= This is a place holder! =
+1. Install the Ardunio IDE. Windows installer available here: http://www.arduino.cc/en/Main/Software
+
+2. Take the AT90CAN128 core files from here: <add link>
+
+3. <Show core files directory structure>
+
+4. <load latest code in the IDE>
+
+5. <setting up programmer physically to the board.>
+
+6. <turn off power, hit initialise, turn power on.>
+
