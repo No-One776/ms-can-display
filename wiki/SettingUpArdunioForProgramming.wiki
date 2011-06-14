@@ -5,11 +5,12 @@
 
 2. Take the AT90CAN128 core files from here: <add link>
 
-3. <Show core files directory structure>
+3. Extract the core files into your Arduino IDE folder such that you have the following:
+
+http://www.tincannetwork.com/files/SettingUpTheCore.png
 
 4. <load latest code in the IDE>
 
 5. <setting up programmer physically to the board.>
 
 6. <turn off power, hit initialise, turn power on.>
-
