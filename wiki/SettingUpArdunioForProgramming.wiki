@@ -9,7 +9,9 @@
 
 http://www.tincannetwork.com/files/SettingUpTheCore.png
 
-4. <load latest code in the IDE>
+4. Start the IDE and open the latest code. The main file to open is: "ms-can-display\Supported\AT90CAN128AT90CAN128.pde"
+
+http://www.tincannetwork.com/files/IDE1.png
 
 5. <setting up programmer physically to the board.>
 
