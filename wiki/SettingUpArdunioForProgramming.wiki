@@ -13,6 +13,16 @@ http://www.tincannetwork.com/files/SettingUpTheCore.png
 
 http://www.tincannetwork.com/files/IDE1.png
 
-5. <setting up programmer physically to the board.>
+5. To program the board a TTL RS232 connection is required. Here is an example with "programmer" used for the 4DGL displays. It is really just an FTDI USB to serial adaptor.
 
-6. <turn off power, hit initialise, turn power on.>
+http://www.tincannetwork.com/files/ProgrammerConnections.png
+
+6. Hit "Verify" to generate a .Hex file for programming. Assuming the code compiled with no errors:
+
+Power off the board.
+
+Hit "Program"
+
+When you see "Binary sketch size: ...." re-apply power to the board.
+
+http://www.tincannetwork.com/files/Nowturnonpower.png
