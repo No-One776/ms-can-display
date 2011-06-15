@@ -28,3 +28,5 @@ http://www.tincannetwork.com/files/IDE2.png
 When you see "Binary sketch size: ...." re-apply power to the board.
 
 http://www.tincannetwork.com/files/Nowturnonpower.png
+
+The code should now be downloaded to the board.
