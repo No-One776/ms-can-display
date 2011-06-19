@@ -5,11 +5,11 @@
 
 2. If your board has an 8Mhz crystal then you need to take the core files here:
 
-
+http://www.tincannetwork.com/files/at90can.zip
 
 If your board has a 16Mhz crystal then you need the core files from here:
 
-
+http://85.12.32.240/~superkoe/arduino/at90can.zip
 
 http://www.tincannetwork.com/files/8Mhz.JPG
 
