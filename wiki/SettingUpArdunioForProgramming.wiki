@@ -3,7 +3,15 @@
 
 1. Install the Ardunio IDE. Windows installer available here: http://www.arduino.cc/en/Main/Software
 
-2. Take the AT90CAN128 core files from here: <add link>
+2. If your board has an 8Mhz crystal then you need to take the core files here:
+
+
+
+If your board has a 16Mhz crystal then you need the core files from here:
+
+
+
+http://www.tincannetwork.com/files/8Mhz.JPG
 
 3. Extract the core files into your Arduino IDE folder such that you have the following:
 
