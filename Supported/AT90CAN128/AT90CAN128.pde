@@ -1,5 +1,6 @@
 #include <DisplayCommand.h>
 #include "./MSDataObject.h"
+#include "./Configuration.h"
 
 
 /*
@@ -21,7 +22,6 @@ Controls a small low side driver to switch the horn relay.
 #define SWITCH_HORN 5
 #define ALL_SWITCH_PRESSED 0
 
-#define HORN_OUTPUT_PIN 38
 #define DISPLAY_RESET_PIN 39
 
 DisplayCommand Gauge;
@@ -60,8 +60,9 @@ void setup() {
   delay(2500);
 
   digitalWrite(36, HIGH);   // set the LED on
-  
-  Menu = 1;
+  newSwitchState = 7;
+  oldSwitchState = 0;  
+  Menu = 1;  
 }
 
 void doCANStuff()
@@ -74,30 +75,59 @@ void doCANStuff()
   rx_remote_msg.cmd = CMD_RX_DATA;
   
   // --- Tx Command
-  while(CAN.cmd(&tx_remote_msg) != CAN_CMD_ACCEPTED);
-  while(CAN.get_status(&tx_remote_msg) == CAN_STATUS_NOT_COMPLETED);
+  while(CAN.cmd(&tx_remote_msg) != CAN_CMD_ACCEPTED);					//Add timeout so software does not lock up when MS not connected.
+  while(CAN.get_status(&tx_remote_msg) == CAN_STATUS_NOT_COMPLETED);   //Add timeout so software does not lock up when MS not connected.
 
   // --- Rx Command
-  while(CAN.cmd(&rx_remote_msg) != CAN_CMD_ACCEPTED);
-  while(CAN.get_status(&rx_remote_msg) == CAN_STATUS_NOT_COMPLETED);   
-  
+  while(CAN.cmd(&rx_remote_msg) != CAN_CMD_ACCEPTED);					//Add timeout so software does not lock up when MS not connected.
+  while(CAN.get_status(&rx_remote_msg) == CAN_STATUS_NOT_COMPLETED); 	//Add timeout so software does not lock up when MS not connected. 
+
+
 }
 
+void readSwitches()
+{
+	if(USE_SWITCHES == 1)
+	{
+		oldSwitchState = newSwitchState;
+		newSwitchState = Serial1.read();
+		//To fix - somtimes does not read the switches properly:
+		if(newSwitchState == 255)
+			newSwitchState = oldSwitchState;
+  
+		Serial1.flush();
+		
+	}
+	else
+	{
+		newSwitchState = 7;
+		oldSwitchState = 7;
+	}
+}
 
 void loop() 
 {
-  oldSwitchState = newSwitchState;
-  newSwitchState = Serial1.read();
-  //To fix - somtimes does not read the switches properly:
-  if(newSwitchState == 255)
-    newSwitchState = oldSwitchState;
   
+  if(newSwitchState != oldSwitchState)
+  {
+      Gauge._ID = SET_GAUGE_MAX;
+      Gauge._Len = 2;  //max value is always a word
+      Gauge._Data = (char*)MSDataObjectList[Menu]._Max;
+      Gauge.SerialSend();
   
-  Serial1.flush();
+      delay(100);
+  
+      Gauge._ID = SET_GAUGE_TITLE;
+      Gauge._Len = 4;  //Gauge name is always a word
+      Gauge._Data = (char*)MSDataObjectList[Menu]._Name;
+      Gauge.SerialSend();
+      
+      tx_remote_msg.id.ext = 36920 + (MSDataObjectList[Menu]._Offset * 262144);
+      Gauge._Len = MSDataObjectList[Menu]._Width;
 
-  //Serial.write(oldSwitchState);
-  //Serial.write(newSwitchState);
-  //read switches and build menu.
+  }  
+    
+  readSwitches();
   
   if(newSwitchState != oldSwitchState)
   {
@@ -139,29 +169,6 @@ void loop()
   }
 
   
-
-     
- 
-  
-  if(newSwitchState != oldSwitchState)
-  {
-      Gauge._ID = SET_GAUGE_MAX;
-      Gauge._Len = 2;  //max value is always a word
-      Gauge._Data = (char*)MSDataObjectList[Menu]._Max;
-      Gauge.SerialSend();
-  
-      delay(100);
-  
-      Gauge._ID = SET_GAUGE_TITLE;
-      Gauge._Len = 4;  //Gauge name is always a word
-      Gauge._Data = (char*)MSDataObjectList[Menu]._Name;
-      Gauge.SerialSend();
-      
-      tx_remote_msg.id.ext = 36920 + (MSDataObjectList[Menu]._Offset * 262144);
-      Gauge._Len = MSDataObjectList[Menu]._Width;
-
-  }
- 
    doCANStuff();
   
    Gauge._ID = SEND_GAUGE_VALUE;
