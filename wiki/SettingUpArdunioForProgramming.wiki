@@ -27,13 +27,15 @@ http://www.tincannetwork.com/files/ProgrammerConnections.png
 
 6. Hit "Verify" to generate a .Hex file for programming. Assuming the code compiled with no errors:
 
-Power off the board.
+7. Remove the connector for the ribbon cable to the OLED display. 
 
-Hit "Program"
+8. Power off the board.
+
+9. Hit "Program"
 
 http://www.tincannetwork.com/files/IDE2.png
 
-When you see "Binary sketch size: ...." re-apply power to the board.
+10. When you see "Binary sketch size: ...." re-apply power to the board. You have to be quick!
 
 http://www.tincannetwork.com/files/Nowturnonpower.png
 
