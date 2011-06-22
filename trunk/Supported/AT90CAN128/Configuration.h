@@ -1,10 +1,11 @@
 /* Configuration file for application specific options */
-
+#define LOW_SIDE_DRIVER_CH1 38
 
 // OUTPUT CONFIGURATION, TURN ON OR OFF HARDWARE OUTPUTS
 
-//Can possibly set this to somthing outside of correct range to "Turn Off" Horn.
-#define HORN_OUTPUT_PIN 38
+//Can possibly set this to somthing outside of correct range to "Turn Off" Horn. 
+//Then Re-allocate LOW_SIDE_DRIVER_CH1 to another function, eg BUZZER_OUTPUT_PIN.
+#define HORN_OUTPUT_PIN LOW_SIDE_DRIVER_CH1
 
 //To do, add buzzer.
 

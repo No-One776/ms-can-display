@@ -18,20 +18,7 @@
 #define SET_GAUGE_MAX 2
 
 
-class DisplayCommand
-{
-	public:
-		char _StartChar;		//Name to display on a display
-		char _ID;		//1 byte or 2 bytes?
-		char _Len;		//Offset from start of megasquirt telemetry data address
-		char* _Data;			//Dividing factor
-		char _EndChar;
-		
-		DisplayCommand(char ID, char Len, char* Data);
-		void SerialSend();
-	private:
-
-};
+void SendCommand(char ID, char Len, char* Data);
 
 
 
