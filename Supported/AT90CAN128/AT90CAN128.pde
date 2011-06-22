@@ -1,4 +1,4 @@
-#include <DisplayCommand.h>
+#include "./DisplayCommand.h"
 #include "./MSDataObject.h"
 #include "./Configuration.h"
 
@@ -24,8 +24,6 @@ Controls a small low side driver to switch the horn relay.
 
 #define DISPLAY_RESET_PIN 39
 
-DisplayCommand Gauge;
-
 unsigned char tx_remote_buffer[8] = {0,0,2,0,0,0,0,0};
 st_cmd_t tx_remote_msg;
 
@@ -38,7 +36,7 @@ char tempData[2] = {0,0};
 byte oldSwitchState;
 byte newSwitchState;
 byte Menu;
-
+word DataLength;
 
 
 void setup() {                
@@ -110,20 +108,15 @@ void loop()
   
   if(newSwitchState != oldSwitchState)
   {
-      Gauge._ID = SET_GAUGE_MAX;
-      Gauge._Len = 2;  //max value is always a word
-      Gauge._Data = (char*)MSDataObjectList[Menu]._Max;
-      Gauge.SerialSend();
+      SendCommand(SET_GAUGE_MAX, 2, (char*)MSDataObjectList[Menu]._Max);
   
       delay(100);
   
-      Gauge._ID = SET_GAUGE_TITLE;
-      Gauge._Len = 4;  //Gauge name is always a word
-      Gauge._Data = (char*)MSDataObjectList[Menu]._Name;
-      Gauge.SerialSend();
+      SendCommand(SET_GAUGE_TITLE, 4, (char*)MSDataObjectList[Menu]._Name);
       
+      //This is the CAN ID to send to the MS to request data back.
       tx_remote_msg.id.ext = 36920 + (MSDataObjectList[Menu]._Offset * 262144);
-      Gauge._Len = MSDataObjectList[Menu]._Width;
+      DataLength = MSDataObjectList[Menu]._Width;
 
   }  
     
@@ -171,9 +164,7 @@ void loop()
   
    doCANStuff();
   
-   Gauge._ID = SEND_GAUGE_VALUE;
-   Gauge._Data = (char*)rx_remote_msg.pt_data;
-   Gauge.SerialSend();   
+   SendCommand(SEND_GAUGE_VALUE, DataLength, (char*)rx_remote_msg.pt_data);
  
    delay(50);
   
