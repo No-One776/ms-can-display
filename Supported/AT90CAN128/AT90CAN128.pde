@@ -24,6 +24,8 @@ Controls a small low side driver to switch the horn relay.
 
 #define DISPLAY_RESET_PIN 39
 
+#define MAX_CAN_TIMEOUT 250
+
 unsigned char tx_remote_buffer[8] = {0,0,2,0,0,0,0,0};
 st_cmd_t tx_remote_msg;
 
@@ -38,6 +40,7 @@ byte newSwitchState;
 byte Menu;
 word DataLength;
 
+char CANTimeOut = 0;
 
 void setup() {                
   
@@ -65,22 +68,52 @@ void setup() {
 
 void doCANStuff()
 {
+  
+  
   tx_remote_msg.ctrl.ide = 1;
   tx_remote_msg.ctrl.rtr = 1;
   tx_remote_msg.dlc = 3;
-  tx_remote_msg.cmd = CMD_TX_DATA;
-  
+  tx_remote_msg.cmd = CMD_TX_DATA;  
   rx_remote_msg.cmd = CMD_RX_DATA;
   
   // --- Tx Command
-  while(CAN.cmd(&tx_remote_msg) != CAN_CMD_ACCEPTED);					//Add timeout so software does not lock up when MS not connected.
-  while(CAN.get_status(&tx_remote_msg) == CAN_STATUS_NOT_COMPLETED);   //Add timeout so software does not lock up when MS not connected.
-
+  CANTimeOut = 0;
+  while((CAN.cmd(&tx_remote_msg) != CAN_CMD_ACCEPTED) && (CANTimeOut < MAX_CAN_TIMEOUT))					
+  {
+	CANTimeOut++;
+  }
+  
+  if(CANTimeOut == MAX_CAN_TIMEOUT)
+	SendError(CAN_TX_ERROR);
+  
+  
+  CANTimeOut = 0;
+  while((CAN.get_status(&tx_remote_msg) == CAN_STATUS_NOT_COMPLETED) && (CANTimeOut < MAX_CAN_TIMEOUT));   //Add timeout so software does not lock up when MS not connected.
+  {
+	CANTimeOut++;
+  }
+  
+  if(CANTimeOut == MAX_CAN_TIMEOUT)
+	SendError(CAN_TX_ERROR);
+  
   // --- Rx Command
-  while(CAN.cmd(&rx_remote_msg) != CAN_CMD_ACCEPTED);					//Add timeout so software does not lock up when MS not connected.
-  while(CAN.get_status(&rx_remote_msg) == CAN_STATUS_NOT_COMPLETED); 	//Add timeout so software does not lock up when MS not connected. 
-
-
+  CANTimeOut = 0;
+  while((CAN.cmd(&rx_remote_msg) != CAN_CMD_ACCEPTED) && (CANTimeOut < MAX_CAN_TIMEOUT))
+  {
+	CANTimeOut++;    
+  }  
+  
+  if(CANTimeOut == MAX_CAN_TIMEOUT)
+	SendError(CAN_RX_ERROR);  
+  				
+  CANTimeOut = 0;
+  while((CAN.get_status(&rx_remote_msg) == CAN_STATUS_NOT_COMPLETED) && (CANTimeOut < MAX_CAN_TIMEOUT)); 	 
+  {
+	CANTimeOut++;    
+  }
+  
+  if(CANTimeOut == MAX_CAN_TIMEOUT)
+	SendError(CAN_RX_ERROR);  
 }
 
 void readSwitches()
@@ -163,9 +196,9 @@ void loop()
 
   
    doCANStuff();
-  
+   
    SendCommand(SEND_GAUGE_VALUE, DataLength, (char*)rx_remote_msg.pt_data);
- 
+   //SendCommand(SEND_GAUGE_VALUE, 1, (char*)CANTimeOut);
    delay(50);
   
 }

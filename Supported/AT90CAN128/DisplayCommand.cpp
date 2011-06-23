@@ -22,3 +22,13 @@ void SendCommand(char ID, char Len, char* Data)
 
 
 }
+
+void SendError(char ErrorNum)
+{
+	
+	Serial.write(START_CHAR);
+	Serial.write(SEND_ERROR);
+	Serial.write(1);
+	Serial.write(ErrorNum);
+	Serial.write(END_CHAR);
+}
