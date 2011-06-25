@@ -1,12 +1,6 @@
-#include "./DisplayCommand.h"
-#include "./MSDataObject.h"
-#include "./Configuration.h"
-#include "./CANFunctions.h"
-
-
 /*
 
-Bare bones proof of concept example.
+AT90CAN128 CAN to Megasquirt Display driver
 
 Polls Megasquirt over CAN
 
@@ -18,123 +12,65 @@ Controls a small low side driver to switch the horn relay.
 
  */
 
-#define SWITCH_UP 6
-#define SWITCH_DOWN  3
-#define SWITCH_HORN 5
-#define ALL_SWITCH_PRESSED 0
 
-#define DISPLAY_RESET_PIN 39
+#include "./DisplayCommand.h"
+#include "./MSDataObject.h"
+#include "./Configuration.h"
+#include "./CANFunctions.h"
+//#include "./OneWireSwitches.h"  //One wire switches disabled for the moment.
+#include <Metro.h>                //Metro library needs to be installed into your Arduino libs folder.
 
-#define MAX_CAN_TIMEOUT 250
 
-int i;
-char tempData[2] = {0,0};
+char Menu;                          //Global variable for which "Menu" item we are currently in.
 
-byte oldSwitchState;
-byte newSwitchState;
-byte Menu;
-word DataLength;
+Metro GetCANData = Metro(100);      //Poll over CAN the MS every 100ms 
+Metro FlipMenu = Metro(5000);     //Flip the menu ever 5 seconds
+
+#define MENU_MAX 4
 
 void setup() {                
   
-  pinMode(HORN_OUTPUT_PIN, OUTPUT);
+  
   
   InitialiseCAN();
+  //InitialiseOneWireSwitches();
   
   Serial.begin(115200);
   
-  Serial1.begin(330);
+  
   
   delay(2500);				// OLED screen needs to be running before we start sending data to it.
   digitalWrite(36, HIGH);	// set a status LED on to show we are starting.
 
-
-  newSwitchState = 7;
-  oldSwitchState = 0;  
+  //Set startup menu item
   Menu = 1;  
+  UpdateGaugeDetails();
+  
+
 }
 
-void readSwitches()
+void UpdateGaugeDetails()
 {
-	if(USE_SWITCHES == 1)
-	{
-		oldSwitchState = newSwitchState;
-		newSwitchState = Serial1.read();
-		//To fix - somtimes does not read the switches properly:
-		if(newSwitchState == 255)
-			newSwitchState = oldSwitchState;
-  
-		Serial1.flush();
-		
-	}
-	else
-	{
-		newSwitchState = 7;
-		oldSwitchState = 7;
-	}
+  delay(200);
+  SendCommand(SET_GAUGE_MAX, 2, (char*)MSDataObjectList[Menu]._Max);
+  delay(200);
+  SendCommand(SET_GAUGE_TITLE, 4, (char*)MSDataObjectList[Menu]._Name);  
 }
+
 
 void loop() 
 {
   
-  if(newSwitchState != oldSwitchState)
+  if (FlipMenu.check())
   {
-      SendCommand(SET_GAUGE_MAX, 2, (char*)MSDataObjectList[Menu]._Max);
-  
-      delay(100);
-  
-      SendCommand(SET_GAUGE_TITLE, 4, (char*)MSDataObjectList[Menu]._Name);
-      
-      //This is the CAN ID to send to the MS to request data back.
-      
-      DataLength = MSDataObjectList[Menu]._Width;
-
+      Menu++;
+      if(Menu > MENU_MAX)
+          Menu = 1;  
+    
+      UpdateGaugeDetails();  
   }  
-    
-  readSwitches();
   
-  if(newSwitchState != oldSwitchState)
-  {
-    switch(newSwitchState)
-    {
-      case SWITCH_UP:
-          Menu++;
-          if(Menu > 3)
-            Menu = 0;
-          
-	  digitalWrite(HORN_OUTPUT_PIN, 0);
-          digitalWrite(DISPLAY_RESET_PIN, 0);
-      break;
-    
-      case SWITCH_DOWN:
-      if(Menu == 0)
-        Menu = 3;
-      else
-        Menu--;
-      
-      digitalWrite(HORN_OUTPUT_PIN, 0);
-      digitalWrite(DISPLAY_RESET_PIN, 0);
-      break;
-
-      case SWITCH_HORN:
-      digitalWrite(HORN_OUTPUT_PIN, 1);
-      digitalWrite(DISPLAY_RESET_PIN, 0);
-      break;
-      
-      case ALL_SWITCH_PRESSED:
-      digitalWrite(DISPLAY_RESET_PIN, 1);
-      digitalWrite(HORN_OUTPUT_PIN, 0);
-      break;
-      
-      default:
-      digitalWrite(HORN_OUTPUT_PIN, 0);
-      digitalWrite(DISPLAY_RESET_PIN, 0);
-    }
-  }
-
+  if (GetCANData.check())
+    SendCommand(SEND_GAUGE_VALUE, MSDataObjectList[Menu]._Width, GetDataValueFromCAN(MSDataObjectList[Menu]._Offset));
    
-   SendCommand(SEND_GAUGE_VALUE, DataLength, GetDataValueFromCAN(MSDataObjectList[Menu]._Offset));
-   
-   delay(50);
-  
 }
