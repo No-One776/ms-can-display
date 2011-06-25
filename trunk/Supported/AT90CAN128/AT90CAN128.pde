@@ -1,6 +1,7 @@
 #include "./DisplayCommand.h"
 #include "./MSDataObject.h"
 #include "./Configuration.h"
+#include "./CANFunctions.h"
 
 
 /*
@@ -26,12 +27,6 @@ Controls a small low side driver to switch the horn relay.
 
 #define MAX_CAN_TIMEOUT 250
 
-unsigned char tx_remote_buffer[8] = {0,0,2,0,0,0,0,0};
-st_cmd_t tx_remote_msg;
-
-unsigned char rx_remote_buffer[8] = {0,0,0,0,0,0,0,0};
-st_cmd_t rx_remote_msg;
-
 int i;
 char tempData[2] = {0,0};
 
@@ -40,80 +35,23 @@ byte newSwitchState;
 byte Menu;
 word DataLength;
 
-char CANTimeOut = 0;
-
 void setup() {                
   
   pinMode(HORN_OUTPUT_PIN, OUTPUT);
-  CAN.set_baudrate(500);
-  CAN.init(0);  
   
-  tx_remote_msg.pt_data = &tx_remote_buffer[0];
-  tx_remote_msg.status = 0;
-
-  rx_remote_msg.pt_data = &rx_remote_buffer[0];
-  rx_remote_msg.status = 0;
+  InitialiseCAN();
   
   Serial.begin(115200);
   
   Serial1.begin(330);
   
-  delay(2500);
+  delay(2500);				// OLED screen needs to be running before we start sending data to it.
+  digitalWrite(36, HIGH);	// set a status LED on to show we are starting.
 
-  digitalWrite(36, HIGH);   // set the LED on
+
   newSwitchState = 7;
   oldSwitchState = 0;  
   Menu = 1;  
-}
-
-void doCANStuff()
-{
-  
-  
-  tx_remote_msg.ctrl.ide = 1;
-  tx_remote_msg.ctrl.rtr = 1;
-  tx_remote_msg.dlc = 3;
-  tx_remote_msg.cmd = CMD_TX_DATA;  
-  rx_remote_msg.cmd = CMD_RX_DATA;
-  
-  // --- Tx Command
-  CANTimeOut = 0;
-  while((CAN.cmd(&tx_remote_msg) != CAN_CMD_ACCEPTED) && (CANTimeOut < MAX_CAN_TIMEOUT))					
-  {
-	CANTimeOut++;
-  }
-  
-  if(CANTimeOut == MAX_CAN_TIMEOUT)
-	SendError(CAN_TX_ERROR);
-  
-  
-  CANTimeOut = 0;
-  while((CAN.get_status(&tx_remote_msg) == CAN_STATUS_NOT_COMPLETED) && (CANTimeOut < MAX_CAN_TIMEOUT));   //Add timeout so software does not lock up when MS not connected.
-  {
-	CANTimeOut++;
-  }
-  
-  if(CANTimeOut == MAX_CAN_TIMEOUT)
-	SendError(CAN_TX_ERROR);
-  
-  // --- Rx Command
-  CANTimeOut = 0;
-  while((CAN.cmd(&rx_remote_msg) != CAN_CMD_ACCEPTED) && (CANTimeOut < MAX_CAN_TIMEOUT))
-  {
-	CANTimeOut++;    
-  }  
-  
-  if(CANTimeOut == MAX_CAN_TIMEOUT)
-	SendError(CAN_RX_ERROR);  
-  				
-  CANTimeOut = 0;
-  while((CAN.get_status(&rx_remote_msg) == CAN_STATUS_NOT_COMPLETED) && (CANTimeOut < MAX_CAN_TIMEOUT)); 	 
-  {
-	CANTimeOut++;    
-  }
-  
-  if(CANTimeOut == MAX_CAN_TIMEOUT)
-	SendError(CAN_RX_ERROR);  
 }
 
 void readSwitches()
@@ -148,7 +86,7 @@ void loop()
       SendCommand(SET_GAUGE_TITLE, 4, (char*)MSDataObjectList[Menu]._Name);
       
       //This is the CAN ID to send to the MS to request data back.
-      tx_remote_msg.id.ext = 36920 + (MSDataObjectList[Menu]._Offset * 262144);
+      
       DataLength = MSDataObjectList[Menu]._Width;
 
   }  
@@ -194,11 +132,9 @@ void loop()
     }
   }
 
-  
-   doCANStuff();
    
-   SendCommand(SEND_GAUGE_VALUE, DataLength, (char*)rx_remote_msg.pt_data);
-   //SendCommand(SEND_GAUGE_VALUE, 1, (char*)CANTimeOut);
+   SendCommand(SEND_GAUGE_VALUE, DataLength, GetDataValueFromCAN(MSDataObjectList[Menu]._Offset));
+   
    delay(50);
   
 }
