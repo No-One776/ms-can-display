@@ -43,7 +43,7 @@ void setup() {
   digitalWrite(36, HIGH);	// set a status LED on to show we are starting.
 
   //Set startup menu item
-  Menu = 1;  
+  Menu = 0;  
   UpdateGaugeDetails();
   
 
@@ -51,9 +51,13 @@ void setup() {
 
 void UpdateGaugeDetails()
 {
-  delay(200);
-  SendCommand(SET_GAUGE_MAX, 2, (char*)MSDataObjectList[Menu]._Max);
-  delay(200);
+  char tempChar[2];
+  
+  delay(100);
+  tempChar[1] = MSDataObjectList[Menu]._Max % 256;
+  tempChar[0] = (MSDataObjectList[Menu]._Max / 256) % 256;
+  SendCommand(SET_GAUGE_MAX, 2, tempChar);
+  delay(100);
   SendCommand(SET_GAUGE_TITLE, 4, (char*)MSDataObjectList[Menu]._Name);  
 }
 
@@ -64,8 +68,8 @@ void loop()
   if (FlipMenu.check())
   {
       Menu++;
-      if(Menu > MENU_MAX)
-          Menu = 1;  
+      if(Menu == MENU_MAX)
+          Menu = 0;  
     
       UpdateGaugeDetails();  
   }  
