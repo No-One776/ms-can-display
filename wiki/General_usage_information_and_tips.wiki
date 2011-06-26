@@ -3,4 +3,11 @@
 
 = CAN Connection to Megasquirt =
 
-Add your content here.
+CAN is found on the megasquirt 2 daughter card on the following pins:
+
+CANH - 6
+CANL - 11
+
+http://www.tincannetwork.com/files/CANConnections.JPG
+
+... Add more info for PNP etc ...
