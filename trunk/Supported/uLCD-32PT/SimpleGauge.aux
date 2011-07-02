@@ -1,0 +1,118 @@
+==============================================================
+==============================================================
+4DGL Compiler 2.6.0.4 -- Copyright 2004-2010 4D Labs
+** C:\Users\Ian\Documents\ms-can-display\ms-can-display\Supported\uLCD-32PT\SimpleGauge.4DG compiled Sat Jul  2 16:22:23 2011
+==============================================================
+==============================================================
+
+
+No Ref for file
+[LINKING]
+function 4, main, address 7
+(main entry point)
+stack usage 12 + 4
+function 'main' requires no arguments
+function 'main' has no return value
+
+[LINKING]
+function 3, DrawGaugeFace, address 356
+stack usage 14 + 4
+function 'DrawGaugeFace' requires no arguments
+function 'DrawGaugeFace' has no return value
+
+[LINKING]
+function 2, DrawNeedleValue, address 620
+stack usage 4 + 4
+function 'DrawNeedleValue' requires 3 argument
+function 'DrawNeedleValue' has no return value
+
+[LINKING]
+function 1, DrawNeedle, address 892
+stack usage 4 + 4
+function 'DrawNeedle' requires 3 argument
+function 'DrawNeedle' has no return value
+
+
+[MACRO]
+
+[CONSTANTS]
+__MAXMEM                          00003800      14336  (usage 1)
+__MAXPROG                         00003C00      15360  (usage 1)
+BAUD_115200                       0000000D         13  (usage 1)
+BLACK                             00000000          0  (usage 2)
+CENTER                            00000078        120  (usage 10)
+CHR                               00000081        129  (usage 1)
+END_CHAR                          000000AA        170  (usage 1)
+OBJECT_COLOUR                     00000012         18  (usage 1)
+ORANGE                            0000FD20      64800  (usage 1)
+PEN_SIZE                          00000010         16  (usage 3)
+PICASO                            00000001          1  (usage 1)
+RADIUS                            0000006E        110  (usage 7)
+RED                               0000F800      63488  (usage 1)
+SEND_GAUGE_VALUE                  00000000          0  (usage 1)
+SET_GAUGE_MAX                     00000002          2  (usage 1)
+SET_GAUGE_TITLE                   00000001          1  (usage 1)
+START_CHAR                        00000055         85  (usage 1)
+UDEC1Z                            0000510A      20746  (usage 1)
+UDEC2Z                            0000520A      21002  (usage 1)
+UDEC3Z                            0000530A      21258  (usage 2)
+UDEC4Z                            0000540A      21514  (usage 1)
+WHITE                             0000FFFF      65535  (usage 4)
+YELLOW                            0000FFE0      65504  (usage 1)
+
+[PmmC FUNCTIONS]
+com_Count                         FFFFFF86        -122  args=0 r=1  (usage 1)
+com_Init                          FFFFFF88        -120  args=3 r=0  (usage 1)
+gfx_Circle                        FFFFFFC3         -61  args=4 r=0  (usage 2)
+gfx_Cls                           FFFFFFCD         -51  args=0 r=0  (usage 1)
+gfx_Line                          FFFFFFC8         -56  args=5 r=0  (usage 2)
+gfx_MoveTo                        FFFFFFCC         -52  args=2 r=0  (usage 5)
+gfx_Orbit                         FFFFFFBD         -67  args=2 r=0  (usage 3)
+gfx_OrbitInit                     FFFFFFBE         -66  args=2 r=0  (usage 3)
+gfx_Rectangle                     FFFFFFC5         -59  args=5 r=0  (usage 1)
+gfx_Set                           FFFFFFCE         -50  args=2 r=0  (usage 4)
+pause                             FFFFFFFA          -6  args=1 r=0  (usage 1)
+serin                             FFFFFFFF          -1  args=0 r=1  (usage 5)
+setbaud                           FFFFFFFC          -4  args=1 r=0  (usage 1)
+txt_FGcolour                      FFFFFFE7         -25  args=1 r=1  (usage 1)
+
+[USER FUNCTIONS]
+DrawGaugeFace                     00000164  args=0 r=0  (usage 1)
+DrawNeedle                        0000037C  args=3 r=0  (usage 2)
+DrawNeedleValue                   0000026C  args=3 r=0  (usage 2)
+
+[GLOBAL VARIABLES]
+combuf                            00000003  word[10]   (usage 1)
+databuf                           00000017  word[10]   (usage 7)
+maxValue                          0000002D  word       (usage 4)
+oldNeedleAngle                    00000001  word       (usage 3)
+
+[PRIVATE VARIABLES]
+
+[__MAXPROG]
+15360
+[__MAXMEM]
+14336
+
+[PROGRAM]
+main
+[CODESIZE]
+949
+[MEMSIZE]
+23
+[ARGCOUNT]
+0
+[RETURNS]
+NO
+[STACKSIZE]
+0 (AUTO)
+[STACK_ESTIMATE]
+50   (nb:- worst case estimate)
+[MODE]
+0
+
+[PROJECT]
+C:\Users\Ian\Documents\ms-can-display\ms-can-display\Supported\uLCD-32PT\SimpleGauge.4DG
+C:\Program Files (x86)\4D Labs\4D Workshop 3 IDE\include\uLCD-32PT_GFX2.fnc
+C:\Program Files (x86)\4D Labs\4D Workshop 3 IDE\include\PicasoGFX2_Functions.fnc
+C:\Program Files (x86)\4D Labs\4D Workshop 3 IDE\include\4DGL_16bitColours.fnc

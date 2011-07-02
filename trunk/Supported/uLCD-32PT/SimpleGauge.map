@@ -1,0 +1,4 @@
+linked : 4     main 0007
+linked : 3     DrawGaugeFace 0164
+linked : 2     DrawNeedleValue 026C
+linked : 1     DrawNeedle 037C
