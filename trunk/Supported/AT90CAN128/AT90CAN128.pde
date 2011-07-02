@@ -26,7 +26,7 @@ char Menu;                          //Global variable for which "Menu" item we a
 Metro GetCANData = Metro(100);      //Poll over CAN the MS every 100ms 
 Metro FlipMenu = Metro(5000);     //Flip the menu ever 5 seconds
 
-#define MENU_MAX 4
+#define MENU_MAX 6
 
 void setup() {                
   
@@ -74,7 +74,10 @@ void loop()
       UpdateGaugeDetails();  
   }  
   
-  if (GetCANData.check())
+  if (GetCANData.check()) {
+    //char TempChar[3];
+    //sprintf (TempChar, "%.2F", (atof(GetDataValueFromCAN(MSDataObjectList[Menu]._Offset)) * MSDataObjectList[Menu]._Mult));
+    //SendCommand(SEND_GAUGE_VALUE, MSDataObjectList[Menu]._Width, TempChar);
     SendCommand(SEND_GAUGE_VALUE, MSDataObjectList[Menu]._Width, GetDataValueFromCAN(MSDataObjectList[Menu]._Offset));
-   
+  }
 }
