@@ -16,5 +16,5 @@
 
 // FUNCTION CONFIGUARATION, TURN ON OR OFF SOFTWARE FEATURES
 //1 = One wire switch interface present, 0 not present.
-#define USE_SWITCHES 0 
+#define USE_ONE_WIRE_SWITCHES 1 
 

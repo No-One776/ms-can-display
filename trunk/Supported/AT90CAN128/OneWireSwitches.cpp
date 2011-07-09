@@ -2,20 +2,24 @@
 #include "WProgram.h"
 #include "Configuration.h"
 
-/*
+
+char oldSwitchState;
+char newSwitchState;
+
 void InitialiseOneWireSwitches()
 {
-   Serial1.begin(330); 	//Odd value because the ATTINY uses internal clock which has a lot of error. 
+   Serial1.begin(9600); 	//Odd value because the ATTINY uses internal clock which has a lot of error. 
 							//Calibration of ATTINY required.
 
-  newSwitchState = 7;
+  newSwitchState = 0;
   oldSwitchState = 0;  
 
   pinMode(HORN_OUTPUT_PIN, OUTPUT);
 
 }
 
-void readSwitches()
+
+char readSwitches()
 {
   oldSwitchState = newSwitchState;
 		
@@ -30,43 +34,7 @@ void readSwitches()
 		
 
   if(newSwitchState != oldSwitchState)
-  {
-    switch(newSwitchState)
-    {
-      case SWITCH_UP:
-          Menu++;
-          if(Menu > 3)
-            Menu = 0;
-          
-	  digitalWrite(HORN_OUTPUT_PIN, 0);
-          digitalWrite(DISPLAY_RESET_PIN, 0);
-      break;
-    
-      case SWITCH_DOWN:
-      if(Menu == 0)
-        Menu = 3;
-      else
-        Menu--;
-      
-      digitalWrite(HORN_OUTPUT_PIN, 0);
-      digitalWrite(DISPLAY_RESET_PIN, 0);
-      break;
-
-      case SWITCH_HORN:
-      digitalWrite(HORN_OUTPUT_PIN, 1);
-      digitalWrite(DISPLAY_RESET_PIN, 0);
-      break;
-      
-      case ALL_SWITCH_PRESSED:
-      digitalWrite(DISPLAY_RESET_PIN, 1);
-      digitalWrite(HORN_OUTPUT_PIN, 0);
-      break;
-      
-      default:
-      digitalWrite(HORN_OUTPUT_PIN, 0);
-      digitalWrite(DISPLAY_RESET_PIN, 0);
-    }
-  }
+    return newSwitchState;
+  else
+    return NO_SWITCH_PRESSED;
 }
-
-*/
