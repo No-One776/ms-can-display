@@ -5,6 +5,7 @@
 //******************************************************************************
 
 #include "CANFunctions.h"
+#include "./fourdglFunctions.h"
 
 unsigned char tx_remote_buffer[8] = {0,0,2,0,0,0,0,0};
 st_cmd_t tx_remote_msg;
@@ -51,6 +52,8 @@ char* GetDataValueFromCAN(int Offset)
 
   while(CAN.get_status(&rx_remote_msg) == CAN_STATUS_NOT_COMPLETED); 	 
 
-  return (char*)rx_remote_msg.pt_data;
+  
+  
+  return ((char*)rx_remote_msg.pt_data);
 }
 
