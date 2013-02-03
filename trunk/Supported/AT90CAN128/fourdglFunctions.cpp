@@ -1,6 +1,7 @@
 
 
 #include "./fourdglFunctions.h"
+#include "./MSDataObject.h"
 
 
 //uOLED uoled;                    // create an instance of the uOLED class
