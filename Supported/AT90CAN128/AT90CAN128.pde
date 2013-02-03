@@ -25,6 +25,7 @@ Controls a small low side driver to switch the horn relay.
 
 char Menu;                          //Global variable for which "Menu" item we are currently in.
 char* tempChar;
+float tempConverterGaugeFloat;
 uOLED uoled; 
 
 Metro GetCANData = Metro(100);      //Poll over CAN the MS every 100ms 
@@ -118,13 +119,15 @@ void loop()
     if(MSDataObjectList[Menu]._Width == 1)
     {
       tempChar = GetDataValueFromCAN(MSDataObjectList[Menu]._Offset);
-      DrawPointer((int)tempChar[0], MSDataObjectList[Menu]._Max);
+      DrawPointer((byte)tempChar[0], MSDataObjectList[Menu]._Max);
     }
     
     if(MSDataObjectList[Menu]._Width == 2)
     {
       tempChar = GetDataValueFromCAN(MSDataObjectList[Menu]._Offset);
-      DrawPointer((((int)tempChar[0]*256) + (int)tempChar[1]), MSDataObjectList[Menu]._Max);
+      tempConverterGaugeFloat = ((byte)tempChar[0] * 256) + (byte)tempChar[1];
+      //tempConverterGaugeFloat = tempConverterGaugeFloat * MSDataObjectList[Menu]._Mult;
+      DrawPointer(tempConverterGaugeFloat, MSDataObjectList[Menu]._Max);
     }
   }
 }
