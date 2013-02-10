@@ -2,6 +2,7 @@
 #include <colors.h>
 #include <float.h>
 #include <stdlib.h>
+#include "./MSDataObject.h"
 
 #define GAUGE_CENTRE_X 63
 #define GAUGE_CENTRE_Y 63
@@ -13,5 +14,5 @@ extern uOLED uoled;                    // create an instance of the uOLED class
 
 void fourdglFunctionsInit();
 void drawGaugeBackground();
-void DrawPointer(int data, int maxValue);
+void DrawPointer(int data, int maxValue, conversion conversionType);
 void intDebug(int data, int row);

@@ -1,12 +1,14 @@
 
 
 #include "./fourdglFunctions.h"
-#include "./MSDataObject.h"
+
 
 
 //uOLED uoled;                    // create an instance of the uOLED class
 int i;
 char tempString[8];
+char tempDecimal[2];
+char tempStringOld[8];
 word colour;
 float oldTempFloat;
 float tempFloat;
@@ -50,7 +52,7 @@ void drawGaugeBackground()
 }
 
 
-void DrawPointer(int data, int maxValue)
+void DrawPointer(int data, int maxValue, conversion conversionType)
 {
 
   
@@ -64,12 +66,38 @@ void DrawPointer(int data, int maxValue)
       uoled.Line(GAUGE_CENTRE_X,GAUGE_CENTRE_Y, (int)(GAUGE_CENTRE_X + GAUGE_NEEDLE_LENGTH*cos(tempFloat*PI)),(int)(GAUGE_CENTRE_Y + GAUGE_NEEDLE_LENGTH*sin(tempFloat*PI)),WHITE); 
       oldTempFloat = tempFloat;
       
-      itoa(oldData,tempString,10);
-      uoled.Text(8,4,SMALL_FONT,BLACK,tempString,0);
+      uoled.Text(8,4,SMALL_FONT,BLACK,tempStringOld,0);
       
-      itoa(data,tempString,10);
+      switch(conversionType)
+      {
+        case NONE:
+          itoa(data,tempString,10);
+          break;
+      
+        case DIVBY10:      //Create a decimal string structure to print
+          itoa(data/10,tempString,10);
+          strcat(tempString, ".");
+          itoa(data%10,tempDecimal,10);
+          strcat(tempString, tempDecimal);
+          break;
+        
+        case DEGFTOC:
+          data = data - 320;
+          data = data * 0.5555;
+          
+          itoa(data/10,tempString,10);
+          strcat(tempString, ".");
+          itoa(data%10,tempDecimal,10);
+          strcat(tempString, tempDecimal);
+          break;
+          
+        default:
+          itoa(data,tempString,10);
+      }
+      
       uoled.Text(8,4,SMALL_FONT,WHITE,tempString,0);
-      oldData = data;
+
+      strcpy(tempStringOld, tempString);
 
       uoled.Circle(GAUGE_CENTRE_X,GAUGE_CENTRE_Y,5, WHITE, FULL);
   }
