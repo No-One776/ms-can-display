@@ -28,11 +28,23 @@ char* tempChar;
 float tempConverterGaugeFloat;
 uOLED uoled; 
 
-Metro GetCANData = Metro(100);      //Poll over CAN the MS every 100ms 
+Metro GetCANData = Metro(100);      //Poll over CAN the MS every 100ms
+Metro updateSpeed = Metro(200);      //Poll over CAN the MS every 100ms
 Metro FlipMenu = Metro(5000);       //Flip the menu ever 5 seconds
 Metro CheckSwitches = Metro(50);    //Check if a switch is pressed
+Metro UpdateADCs = Metro(50);    //Check if a switch is pressed
 
 #define MENU_MAX 6
+
+char tempSpeedString[4];
+unsigned int tempSpeed;
+unsigned int tempRPM;
+unsigned int tempSpeed4thOld;
+unsigned int tempSpeed5thOld;
+
+unsigned int tempA2D0;
+unsigned int tempA2D1;
+unsigned int tempOldA2D;
 
 void setup() {                
   
@@ -119,7 +131,7 @@ void loop()
     if(MSDataObjectList[Menu]._Width == 1)
     {
       tempChar = GetDataValueFromCAN(MSDataObjectList[Menu]._Offset);
-      DrawPointer((byte)tempChar[0], MSDataObjectList[Menu]._Max);
+      DrawPointer((byte)tempChar[0], MSDataObjectList[Menu]._Max, MSDataObjectList[Menu]._Conversion);
     }
     
     if(MSDataObjectList[Menu]._Width == 2)
@@ -127,7 +139,64 @@ void loop()
       tempChar = GetDataValueFromCAN(MSDataObjectList[Menu]._Offset);
       tempConverterGaugeFloat = ((byte)tempChar[0] * 256) + (byte)tempChar[1];
       //tempConverterGaugeFloat = tempConverterGaugeFloat * MSDataObjectList[Menu]._Mult;
-      DrawPointer(tempConverterGaugeFloat, MSDataObjectList[Menu]._Max);
+      DrawPointer(tempConverterGaugeFloat, MSDataObjectList[Menu]._Max, MSDataObjectList[Menu]._Conversion);
     }
+  }
+  
+  if(updateSpeed.check())  {
+    
+    
+    tempChar = GetDataValueFromCAN(MSDataObjectList[RPM_DATA_OBJECT]._Offset);
+    tempRPM = ((byte)tempChar[0] * 256) + (byte)tempChar[1];
+    
+    //clear old numbers
+    itoa(tempSpeed4thOld,tempSpeedString,10);
+    uoled.Text(0,0,SMALL_FONT,BLACK,tempSpeedString,0);
+
+    itoa(tempSpeed5thOld,tempSpeedString,10);
+    uoled.Text(18,0,SMALL_FONT,BLACK,tempSpeedString,0);
+    
+    //calc 4th gear speed          
+    tempSpeed = tempRPM * 10;  //lazy - replace with lookup
+    tempSpeed = tempSpeed / 403;
+    
+    tempSpeed4thOld = tempSpeed;
+    
+    //print 4th speed
+    itoa(tempSpeed,tempSpeedString,10);
+    uoled.Text(0,0,SMALL_FONT,WHITE,tempSpeedString,0);
+ 
+     
+    //calc 5th gear speed
+    tempSpeed = tempRPM * 10;  //lazy - replace with lookup
+    tempSpeed = tempSpeed / 328;
+    
+    //print 5th speed
+    itoa(tempSpeed,tempSpeedString,10);
+    uoled.Text(18,0,SMALL_FONT,WHITE,tempSpeedString,0);
+    
+    tempSpeed5thOld = tempSpeed;    
+  }
+  
+  if(UpdateADCs.check())  {
+    
+    
+    //clear old numbers
+    itoa(tempA2D0,tempSpeedString,10);
+    uoled.Text(0,14,SMALL_FONT,BLACK,tempSpeedString,0);
+    
+    tempA2D0 = analogRead(0);
+    itoa(tempA2D0,tempSpeedString,10);
+    uoled.Text(0,14,SMALL_FONT,WHITE,tempSpeedString,0);
+    
+    //clear old numbers
+    itoa(tempA2D1,tempSpeedString,10);
+    uoled.Text(18,14,SMALL_FONT,BLACK,tempSpeedString,0);
+    
+    tempA2D1 = analogRead(1);
+    itoa(tempA2D1,tempSpeedString,10);
+    uoled.Text(18,14,SMALL_FONT,WHITE,tempSpeedString,0);    
+    
+    
   }
 }
