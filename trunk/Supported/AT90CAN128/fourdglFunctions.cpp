@@ -19,9 +19,7 @@ void fourdglFunctionsInit()
 {
 	uoled.begin(39,256000, &Serial);// with the reset line connected to pin 8 and a serial speed of 256000 
 									// using hardware serial port1 (options are &Serial, &Serial1, &Serial2 and &serial3 on a Arduino Mega)
-									// reset and initialize the display
-
-
+  				// reset and initialize the display
 
 }
 
@@ -66,7 +64,7 @@ void DrawPointer(int data, int maxValue, conversion conversionType)
       uoled.Line(GAUGE_CENTRE_X,GAUGE_CENTRE_Y, (int)(GAUGE_CENTRE_X + GAUGE_NEEDLE_LENGTH*cos(tempFloat*PI)),(int)(GAUGE_CENTRE_Y + GAUGE_NEEDLE_LENGTH*sin(tempFloat*PI)),WHITE); 
       oldTempFloat = tempFloat;
       
-      uoled.Text(8,4,SMALL_FONT,BLACK,tempStringOld,0);
+      uoled.Text(6,2,LARGE_FONT,BLACK,tempStringOld,0);
       
       switch(conversionType)
       {
@@ -95,7 +93,7 @@ void DrawPointer(int data, int maxValue, conversion conversionType)
           itoa(data,tempString,10);
       }
       
-      uoled.Text(8,4,SMALL_FONT,WHITE,tempString,0);
+      uoled.Text(6,2,LARGE_FONT,WHITE,tempString,0);
 
       strcpy(tempStringOld, tempString);
 
