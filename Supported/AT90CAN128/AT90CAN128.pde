@@ -115,11 +115,13 @@ void loop()
   {  
     if (FlipMenu.check())
     {
+        /* this is actually really annoying in the car
         Menu++;
         if(Menu == MENU_MAX)
             Menu = 0;  
     
         UpdateGaugeDetails();  
+        */
     }
   }  
   
@@ -180,23 +182,33 @@ void loop()
   
   if(UpdateADCs.check())  {
     
+    if(tempA2D0 != analogRead(0))
+    {
+
+      //clear old numbers
+      itoa(tempA2D0,tempSpeedString,10);
+      uoled.Text(0,14,SMALL_FONT,BLACK,tempSpeedString,0);
     
-    //clear old numbers
-    itoa(tempA2D0,tempSpeedString,10);
-    uoled.Text(0,14,SMALL_FONT,BLACK,tempSpeedString,0);
-    
-    tempA2D0 = analogRead(0);
-    itoa(tempA2D0,tempSpeedString,10);
-    uoled.Text(0,14,SMALL_FONT,WHITE,tempSpeedString,0);
-    
-    //clear old numbers
-    itoa(tempA2D1,tempSpeedString,10);
-    uoled.Text(18,14,SMALL_FONT,BLACK,tempSpeedString,0);
-    
-    tempA2D1 = analogRead(1);
-    itoa(tempA2D1,tempSpeedString,10);
-    uoled.Text(18,14,SMALL_FONT,WHITE,tempSpeedString,0);    
+      tempA2D0 = analogRead(0);
+      itoa(tempA2D0,tempSpeedString,10);
+      uoled.Text(0,14,SMALL_FONT,WHITE,tempSpeedString,0);
+    }
     
     
-  }
-}
+    if(tempA2D0 > 200)
+    {
+      Menu++;
+      if(Menu == MENU_MAX)
+        Menu = 0;  
+        
+       UpdateGaugeDetails();  
+    }   
+    
+    if(tempA2D1 != analogRead(1))
+    {
+      //clear old numbers
+      itoa(tempA2D1,tempSpeedString,10);
+      uoled.Text(18,14,SMALL_FONT,BLACK,tempSpeedString,0);
+    
+      tempA2D1 = analogRead(1);
+      itoa(tempA2D1,tempSpeedString,10);Z}
