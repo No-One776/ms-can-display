@@ -17,9 +17,8 @@ int oldData;
 
 void fourdglFunctionsInit()
 {
-	uoled.begin(39,256000, &Serial);// with the reset line connected to pin 8 and a serial speed of 256000 
-									// using hardware serial port1 (options are &Serial, &Serial1, &Serial2 and &serial3 on a Arduino Mega)
-  				// reset and initialize the display
+        
+	uoled.begin(39,256000, &Serial); //init serial comms to the display. Also toggles reset pin on display but not connected in this case
 
 }
 
@@ -88,7 +87,23 @@ void DrawPointer(int data, int maxValue, conversion conversionType)
           itoa(data%10,tempDecimal,10);
           strcat(tempString, tempDecimal);
           break;
+        
+        case FOURTHTHGEAR:
+          //calc 4th gear speed          
+          data = data * 10;  //lazy - replace with lookup
+          data = data / 403;
+          itoa(data,tempString,10);
+          break;
           
+        case FIFTHTHGEAR:
+          //calc 4th gear speed          
+          data = data * 10;  //lazy - replace with lookup
+          data = data / 328;
+          itoa(data,tempString,10);
+          break;
+          
+       
+        
         default:
           itoa(data,tempString,10);
       }

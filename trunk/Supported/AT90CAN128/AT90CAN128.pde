@@ -34,8 +34,6 @@ Metro FlipMenu = Metro(5000);       //Flip the menu ever 5 seconds
 Metro CheckSwitches = Metro(50);    //Check if a switch is pressed
 Metro UpdateADCs = Metro(50);    //Check if a switch is pressed
 
-#define MENU_MAX 6
-
 char tempSpeedString[4];
 unsigned int tempSpeed;
 unsigned int tempRPM;
@@ -46,29 +44,44 @@ unsigned int tempA2D0;
 unsigned int tempA2D1;
 unsigned int tempOldA2D;
 
+boolean SwitchPressed;
+
+unsigned char numScreenConnectAttempts;
+
 void setup() {                
   
   
   
   InitialiseCAN();
   //InitialiseOneWireSwitches();
-  
-  //Serial.begin(115200);
+
   
   if(USE_ONE_WIRE_SWITCHES)
     InitialiseOneWireSwitches();
   
-  //delay(2500);				// OLED screen needs to be running before we start sending data to it.
-  //digitalWrite(36, HIGH);	// set a status LED on to show we are starting.
 
   //Set startup menu item
   Menu = 0;  
   
-  fourdglFunctionsInit();
+  numScreenConnectAttempts = 0;
+
+  while(numScreenConnectAttempts < 10)
+  {
+    fourdglFunctionsInit();
+    numScreenConnectAttempts++;
+    if(uoled.res == 0x06)  //ack byte from OLED received
+      break;
+  }
+  
+  
   drawGaugeBackground();
   UpdateGaugeDetails();
   
+  SwitchPressed = false;
   
+   
+   itoa(numScreenConnectAttempts,tempSpeedString,10);
+   uoled.Text(0,14,SMALL_FONT,WHITE,tempSpeedString,0);  
 
 }
 
@@ -145,6 +158,7 @@ void loop()
     }
   }
   
+  //remove if individual speed gauges are sufficient
   if(updateSpeed.check())  {
     
     
@@ -182,28 +196,33 @@ void loop()
   
   if(UpdateADCs.check())  {
     
+    //Read A2D0 and display on screen
     if(tempA2D0 != analogRead(0))
     {
 
       //clear old numbers
-      itoa(tempA2D0,tempSpeedString,10);
-      uoled.Text(0,14,SMALL_FONT,BLACK,tempSpeedString,0);
+      //itoa(tempA2D0,tempSpeedString,10);
+      //uoled.Text(0,14,SMALL_FONT,BLACK,tempSpeedString,0);
     
       tempA2D0 = analogRead(0);
-      itoa(tempA2D0,tempSpeedString,10);
-      uoled.Text(0,14,SMALL_FONT,WHITE,tempSpeedString,0);
+      //itoa(tempA2D0,tempSpeedString,10);
+      //uoled.Text(0,14,SMALL_FONT,WHITE,tempSpeedString,0);
     }
     
-    
-    if(tempA2D0 > 200)
+    //switch with 1k pullup connected to ADC0 to cycle menu
+    if(tempA2D0 > 200 && SwitchPressed == true)  //debounce one sample. Still abit bouncy could increase number of debounces.
     {
       Menu++;
       if(Menu == MENU_MAX)
         Menu = 0;  
         
        UpdateGaugeDetails();  
+       SwitchPressed = false;
     }   
+    else
+      SwitchPressed = true;
     
+    //read A2D1 and display on screen.
     if(tempA2D1 != analogRead(1))
     {
       //clear old numbers
@@ -211,4 +230,7 @@ void loop()
       uoled.Text(18,14,SMALL_FONT,BLACK,tempSpeedString,0);
     
       tempA2D1 = analogRead(1);
-      itoa(tempA2D1,tempSpeedString,10);Z}
+      itoa(tempA2D1,tempSpeedString,10);
+    }
+  }
+}
