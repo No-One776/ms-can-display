@@ -22,17 +22,20 @@ Controls a small low side driver to switch the horn relay.
 #include "./fourdglFunctions.h"
 #include <Metro.h>                //Metro library needs to be installed into your Arduino libs folder.
 
+#define ALIVE_LED 36
 
 char Menu;                          //Global variable for which "Menu" item we are currently in.
 char* tempChar;
 float tempConverterGaugeFloat;
 uOLED uoled; 
 
-Metro GetCANData = Metro(100);      //Poll over CAN the MS every 100ms
-Metro updateSpeed = Metro(200);      //Poll over CAN the MS every 100ms
+Metro UpdateGauge = Metro(100);      //Poll over CAN the MS every 100ms
 Metro FlipMenu = Metro(5000);       //Flip the menu ever 5 seconds
 Metro CheckSwitches = Metro(50);    //Check if a switch is pressed
 Metro UpdateADCs = Metro(50);    //Check if a switch is pressed
+Metro ImAlive = Metro(100);    //Indication software is running
+
+
 
 char tempSpeedString[4];
 unsigned int tempSpeed;
@@ -46,7 +49,6 @@ unsigned int tempOldA2D;
 
 boolean SwitchPressed;
 
-unsigned char numScreenConnectAttempts;
 
 void setup() {                
   
@@ -63,25 +65,18 @@ void setup() {
   //Set startup menu item
   Menu = 0;  
   
-  numScreenConnectAttempts = 0;
-
-  while(numScreenConnectAttempts < 10)
-  {
-    fourdglFunctionsInit();
-    numScreenConnectAttempts++;
-    if(uoled.res == 0x06)  //ack byte from OLED received
-      break;
-  }
+  //Initiate OLED serial display
+  fourdglFunctionsInit();
   
-  
+  //Draw gauge circle
   drawGaugeBackground();
+  
+  //Draw the gauge information for the defined first menu item
   UpdateGaugeDetails();
   
   SwitchPressed = false;
-  
-   
-   itoa(numScreenConnectAttempts,tempSpeedString,10);
-   uoled.Text(0,14,SMALL_FONT,WHITE,tempSpeedString,0);  
+
+  pinMode(ALIVE_LED, OUTPUT);
 
 }
 
@@ -98,47 +93,28 @@ void UpdateGaugeDetails()
 void loop() 
 {
   
-  if(USE_ONE_WIRE_SWITCHES)
+  //Toggle the status LED - on a CRO this shows how poorly the software scheduler is maintaining the schedules.
+  if(ImAlive.check())
   {
-    if(CheckSwitches.check())
-    {
-      switch(readSwitches())
-      {
-        case SWITCH_UP:
-           Menu++;
-          if(Menu == MENU_MAX)
-              Menu = 0;
-              
-          UpdateGaugeDetails();
-        break;
-
-        case SWITCH_DOWN:     
-             
-          if(Menu == 0)
-              Menu = (MENU_MAX-1);
-          else
-             Menu--; 
-         
-         UpdateGaugeDetails();              
-        break;
-      }
-    }
+      digitalWrite(ALIVE_LED,!digitalRead(ALIVE_LED)); //toggle status LED
   }
-  else  //No switches so just flip the menu every 5 seconds so the user can see all gauges
-  {  
-    if (FlipMenu.check())
-    {
-        /* this is actually really annoying in the car
+  
+  
+  
+  if (FlipMenu.check())
+  {
+        //this is actually really annoying in the car
         Menu++;
         if(Menu == MENU_MAX)
             Menu = 0;  
     
         UpdateGaugeDetails();  
-        */
-    }
-  }  
+        
+  }
+
   
-  if (GetCANData.check()) {
+  //Update the gauge pointer and text data. (From whatever source, CAN, GPS, etc...)
+  if (UpdateGauge.check()) {
     //char TempChar[3];
     //sprintf (TempChar, "%.2F", (atof(GetDataValueFromCAN(MSDataObjectList[Menu]._Offset)) * MSDataObjectList[Menu]._Mult));
     //SendCommand(SEND_GAUGE_VALUE, MSDataObjectList[Menu]._Width, TempChar);
@@ -158,79 +134,4 @@ void loop()
     }
   }
   
-  //remove if individual speed gauges are sufficient
-  if(updateSpeed.check())  {
-    
-    
-    tempChar = GetDataValueFromCAN(MSDataObjectList[RPM_DATA_OBJECT]._Offset);
-    tempRPM = ((byte)tempChar[0] * 256) + (byte)tempChar[1];
-    
-    //clear old numbers
-    itoa(tempSpeed4thOld,tempSpeedString,10);
-    uoled.Text(0,0,SMALL_FONT,BLACK,tempSpeedString,0);
-
-    itoa(tempSpeed5thOld,tempSpeedString,10);
-    uoled.Text(18,0,SMALL_FONT,BLACK,tempSpeedString,0);
-    
-    //calc 4th gear speed          
-    tempSpeed = tempRPM * 10;  //lazy - replace with lookup
-    tempSpeed = tempSpeed / 403;
-    
-    tempSpeed4thOld = tempSpeed;
-    
-    //print 4th speed
-    itoa(tempSpeed,tempSpeedString,10);
-    uoled.Text(0,0,SMALL_FONT,WHITE,tempSpeedString,0);
- 
-     
-    //calc 5th gear speed
-    tempSpeed = tempRPM * 10;  //lazy - replace with lookup
-    tempSpeed = tempSpeed / 328;
-    
-    //print 5th speed
-    itoa(tempSpeed,tempSpeedString,10);
-    uoled.Text(18,0,SMALL_FONT,WHITE,tempSpeedString,0);
-    
-    tempSpeed5thOld = tempSpeed;    
-  }
-  
-  if(UpdateADCs.check())  {
-    
-    //Read A2D0 and display on screen
-    if(tempA2D0 != analogRead(0))
-    {
-
-      //clear old numbers
-      //itoa(tempA2D0,tempSpeedString,10);
-      //uoled.Text(0,14,SMALL_FONT,BLACK,tempSpeedString,0);
-    
-      tempA2D0 = analogRead(0);
-      //itoa(tempA2D0,tempSpeedString,10);
-      //uoled.Text(0,14,SMALL_FONT,WHITE,tempSpeedString,0);
-    }
-    
-    //switch with 1k pullup connected to ADC0 to cycle menu
-    if(tempA2D0 > 200 && SwitchPressed == true)  //debounce one sample. Still abit bouncy could increase number of debounces.
-    {
-      Menu++;
-      if(Menu == MENU_MAX)
-        Menu = 0;  
-        
-       UpdateGaugeDetails();  
-       SwitchPressed = false;
-    }   
-    else
-      SwitchPressed = true;
-    
-    //read A2D1 and display on screen.
-    if(tempA2D1 != analogRead(1))
-    {
-      //clear old numbers
-      itoa(tempA2D1,tempSpeedString,10);
-      uoled.Text(18,14,SMALL_FONT,BLACK,tempSpeedString,0);
-    
-      tempA2D1 = analogRead(1);
-      itoa(tempA2D1,tempSpeedString,10);
-    }
-  }
 }
