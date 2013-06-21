@@ -2,7 +2,7 @@
 
 #include "./fourdglFunctions.h"
 
-
+#define ULED_RESET_PIN 0
 
 //uOLED uoled;                    // create an instance of the uOLED class
 int i;
@@ -18,7 +18,7 @@ int oldData;
 void fourdglFunctionsInit()
 {
         
-	uoled.begin(39,256000, &Serial); //init serial comms to the display. Also toggles reset pin on display but not connected in this case
+	uoled.begin(ULED_RESET_PIN,256000, &Serial); //init serial comms to the display. Also toggles reset pin on display but not connected in this case
 
 }
 
