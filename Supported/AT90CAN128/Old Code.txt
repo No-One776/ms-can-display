@@ -1,0 +1,112 @@
+//remove if individual speed gauges are sufficient
+  if(updateSpeed.check())  {
+    
+    
+    tempChar = GetDataValueFromCAN(MSDataObjectList[RPM_DATA_OBJECT]._Offset);
+    tempRPM = ((byte)tempChar[0] * 256) + (byte)tempChar[1];
+    
+    //clear old numbers
+    itoa(tempSpeed4thOld,tempSpeedString,10);
+    uoled.Text(0,0,SMALL_FONT,BLACK,tempSpeedString,0);
+
+    itoa(tempSpeed5thOld,tempSpeedString,10);
+    uoled.Text(18,0,SMALL_FONT,BLACK,tempSpeedString,0);
+    
+    //calc 4th gear speed          
+    tempSpeed = tempRPM * 10;  //lazy - replace with lookup
+    tempSpeed = tempSpeed / 403;
+    
+    tempSpeed4thOld = tempSpeed;
+    
+    //print 4th speed
+    itoa(tempSpeed,tempSpeedString,10);
+    uoled.Text(0,0,SMALL_FONT,WHITE,tempSpeedString,0);
+ 
+     
+    //calc 5th gear speed
+    tempSpeed = tempRPM * 10;  //lazy - replace with lookup
+    tempSpeed = tempSpeed / 328;
+    
+    //print 5th speed
+    itoa(tempSpeed,tempSpeedString,10);
+    uoled.Text(18,0,SMALL_FONT,WHITE,tempSpeedString,0);
+    
+    tempSpeed5thOld = tempSpeed;    
+  }
+
+
+
+if(UpdateADCs.check())  {
+    
+    /*
+    //Read A2D0 and display on screen
+    if(tempA2D0 != analogRead(0))
+    {
+
+      //clear old numbers
+      //itoa(tempA2D0,tempSpeedString,10);
+      //uoled.Text(0,14,SMALL_FONT,BLACK,tempSpeedString,0);
+    
+      tempA2D0 = analogRead(0);
+      //itoa(tempA2D0,tempSpeedString,10);
+      //uoled.Text(0,14,SMALL_FONT,WHITE,tempSpeedString,0);
+    }
+    
+    //switch with 1k pullup connected to ADC0 to cycle menu
+    
+    if(tempA2D0 > 200 && SwitchPressed == true)  //debounce one sample. Still abit bouncy could increase number of debounces.
+    {
+      Menu++;
+      if(Menu == MENU_MAX)
+        Menu = 0;  
+        
+       UpdateGaugeDetails();  
+       SwitchPressed = false;
+    }   
+    else
+      SwitchPressed = true;
+    
+    
+    //read A2D1 and display on screen.
+    if(tempA2D1 != analogRead(1))
+    {
+      //clear old numbers
+      itoa(tempA2D1,tempSpeedString,10);
+      uoled.Text(18,14,SMALL_FONT,BLACK,tempSpeedString,0);
+    
+      tempA2D1 = analogRead(1);
+      itoa(tempA2D1,tempSpeedString,10);
+    }
+  */
+  }
+
+
+/*
+  if(USE_ONE_WIRE_SWITCHES)
+  {
+    
+    if(CheckSwitches.check())
+    {
+      switch(readSwitches())
+      {
+        case SWITCH_UP:
+           Menu++;
+          if(Menu == MENU_MAX)
+              Menu = 0;
+              
+          UpdateGaugeDetails();
+        break;
+
+        case SWITCH_DOWN:     
+             
+          if(Menu == 0)
+              Menu = (MENU_MAX-1);
+          else
+             Menu--; 
+         
+         UpdateGaugeDetails();              
+        break;
+      }
+    }
+    
+  }
