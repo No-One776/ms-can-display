@@ -21,6 +21,11 @@ Controls a small low side driver to switch the horn relay.
 #include "./OneWireSwitches.h"  
 #include "./fourdglFunctions.h"
 #include <Metro.h>                //Metro library needs to be installed into your Arduino libs folder.
+#include <TinyGPS.h>              //Nice small library to convert NMEA strings from the GPS to usefull information
+#include <NewSoftSerial.h>
+
+#define RXD 1
+#define TXD 2
 
 #define ALIVE_LED 36
 
@@ -29,13 +34,14 @@ char* tempChar;
 float tempConverterGaugeFloat;
 uOLED uoled; 
 
-Metro UpdateGauge = Metro(100);      //Poll over CAN the MS every 100ms
-Metro FlipMenu = Metro(5000);       //Flip the menu ever 5 seconds
-Metro CheckSwitches = Metro(50);    //Check if a switch is pressed
-Metro UpdateADCs = Metro(50);    //Check if a switch is pressed
-Metro ImAlive = Metro(100);    //Indication software is running
+Metro UpdateGauge = Metro(100);       //Poll over CAN the MS every 100ms
+Metro FlipMenu = Metro(5000);         //Flip the menu ever 5 seconds
+Metro CheckSwitches = Metro(50);      //Check if a switch is pressed
+Metro UpdateADCs = Metro(50);         //Check if a switch is pressed
+Metro ImAlive = Metro(100);           //Indication software is running
+Metro ReadGPS = Metro(250);           //Get data from GPS - store usefull info in RAM.
 
-
+TinyGPS gps;
 
 char tempSpeedString[4];
 unsigned int tempSpeed;
@@ -48,11 +54,16 @@ unsigned int tempA2D1;
 unsigned int tempOldA2D;
 
 boolean SwitchPressed;
+boolean GPSDataCollected;
 
+int TempGPSChar;
+
+NewSoftSerial DebugOut(RXD, TXD);
 
 void setup() {                
   
-  
+  Serial1.begin(9600);
+  DebugOut.begin(9600);
   
   InitialiseCAN();
   //InitialiseOneWireSwitches();
@@ -75,9 +86,12 @@ void setup() {
   UpdateGaugeDetails();
   
   SwitchPressed = false;
+  GPSDataCollected = false;
 
   pinMode(ALIVE_LED, OUTPUT);
-
+  
+  //Software serial connection to GPS module
+  
 }
 
 
@@ -112,14 +126,37 @@ void loop()
         
   }
 
+  if(ReadGPS.check())
+  {
+      //Add timeout and error counter to here!
+      while ((Serial1.available() > 0) && GPSDataCollected == false)
+      {
+        TempGPSChar = Serial1.read();
+        DebugOut.print((char)TempGPSChar);
+           
+        if (gps.encode(TempGPSChar))
+        {
+          GPSDataCollected = true;
+        }
+        
+        uoled.Text(0,0,SMALL_FONT,WHITE,"t",0);
+      }
+  }
+   
+    
+
   
   //Update the gauge pointer and text data. (From whatever source, CAN, GPS, etc...)
   if (UpdateGauge.check()) {
-    //char TempChar[3];
-    //sprintf (TempChar, "%.2F", (atof(GetDataValueFromCAN(MSDataObjectList[Menu]._Offset)) * MSDataObjectList[Menu]._Mult));
-    //SendCommand(SEND_GAUGE_VALUE, MSDataObjectList[Menu]._Width, TempChar);
-    //SendCommand(SEND_GAUGE_VALUE, MSDataObjectList[Menu]._Width, GetDataValueFromCAN(MSDataObjectList[Menu]._Offset));
-    if(MSDataObjectList[Menu]._Width == 1)
+  
+    if(GPSDataCollected == true)
+    {
+      itoa(gps.speed(),tempSpeedString,10);
+      uoled.Text(0,0,SMALL_FONT,WHITE,"Test",0);
+      GPSDataCollected = false;
+    }
+    
+    /*if(MSDataObjectList[Menu]._Width == 1)
     {
       tempChar = GetDataValueFromCAN(MSDataObjectList[Menu]._Offset);
       DrawPointer((byte)tempChar[0], MSDataObjectList[Menu]._Max, MSDataObjectList[Menu]._Conversion);
@@ -131,7 +168,7 @@ void loop()
       tempConverterGaugeFloat = ((byte)tempChar[0] * 256) + (byte)tempChar[1];
       //tempConverterGaugeFloat = tempConverterGaugeFloat * MSDataObjectList[Menu]._Mult;
       DrawPointer(tempConverterGaugeFloat, MSDataObjectList[Menu]._Max, MSDataObjectList[Menu]._Conversion);
-    }
+    }*/
   }
   
 }
