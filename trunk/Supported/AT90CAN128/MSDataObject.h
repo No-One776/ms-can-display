@@ -30,7 +30,9 @@ struct MSDataObject
 
 #define RPM_DATA_OBJECT 1
 
-const MSDataObject MSDataObjectList[10] =
+#define MENU_MAX 10
+
+const MSDataObject MSDataObjectList[MENU_MAX] =
 {
 	{"SECL","s  ",1,1,NONE,255},
 	{"RPM ","rpm",2,6,NONE,8000},
@@ -44,8 +46,5 @@ const MSDataObject MSDataObjectList[10] =
         {"BATT","v",2,26,DIVBY10,160}
         
 };
-
-#define MENU_MAX 10
-
 
 #endif // MSDataObject_H
