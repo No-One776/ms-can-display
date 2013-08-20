@@ -30,7 +30,7 @@ struct MSDataObject
 
 #define RPM_DATA_OBJECT 1
 
-#define MENU_MAX 10
+#define MENU_MAX 9
 
 const MSDataObject MSDataObjectList[MENU_MAX] =
 {
@@ -40,8 +40,7 @@ const MSDataObject MSDataObjectList[MENU_MAX] =
 	{"MAT ","C  ",2,20,DEGFTOC,3000},
 	{"CLT ","C  ",2,22,DEGFTOC,30000},
 	{"AFR1","afr",2,28,DIVBY10,200},
-        {"4th","kph",2,6,FOURTHTHGEAR,8000},         //Not a unique MS data object!!! - uses RPM with unique conversion ratio
-        {"5th","kph",2,6,FIFTHTHGEAR,8000},        //Not a unique MS data object!!! - uses RPM with unique conversion ratio
+        {"SPD","kph",2,6,NONE,200},         //Not a unique MS data object!!! - uses RPM with unique conversion ratio
         {"TPS","%",2,24,DIVBY10,1000},
         {"BATT","v",2,26,DIVBY10,160}
         
