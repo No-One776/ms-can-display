@@ -23,9 +23,11 @@ Controls a small low side driver to switch the horn relay.
 #include <Metro.h>                //Metro library needs to be installed into your Arduino libs folder.
 #include <TinyGPS.h>              //Nice small library to convert NMEA strings from the GPS to usefull information
 #include <NewSoftSerial.h>
+#include "floatToString.h"  //set to whatever is the location of floatToStrig
+
 
 #define RXD 1
-#define TXD 2
+#define TXD 2 
 
 #define ALIVE_LED 36
 
@@ -74,7 +76,7 @@ void setup() {
   
 
   //Set startup menu item
-  Menu = 0;  
+  Menu = 6;  
   
   //Initiate OLED serial display
   fourdglFunctionsInit();
@@ -118,12 +120,12 @@ void loop()
   if (FlipMenu.check())
   {
         //this is actually really annoying in the car
-        Menu++;
+        /*Menu++;
         if(Menu == MENU_MAX)
             Menu = 0;  
     
         UpdateGaugeDetails();  
-        
+        */
   }
 
   if(ReadGPS.check())
@@ -132,18 +134,18 @@ void loop()
       while ((Serial1.available() > 0) && GPSDataCollected == false)
       {
         TempGPSChar = Serial1.read();
-        DebugOut.print((char)TempGPSChar);
+        //DebugOut.print((char)TempGPSChar);
            
         if (gps.encode(TempGPSChar))
         {
           GPSDataCollected = true;
         }
         
-        uoled.Text(0,0,SMALL_FONT,WHITE,"t",0);
+        //uoled.Text(0,0,SMALL_FONT,WHITE,"t",0);
       }
   }
    
-    
+                 
 
   
   //Update the gauge pointer and text data. (From whatever source, CAN, GPS, etc...)
@@ -151,8 +153,11 @@ void loop()
   
     if(GPSDataCollected == true)
     {
-      itoa(gps.speed(),tempSpeedString,10);
-      uoled.Text(0,0,SMALL_FONT,WHITE,"Test",0);
+       DrawPointer((int)gps.f_speed_kmph(), MSDataObjectList[Menu]._Max, MSDataObjectList[Menu]._Conversion);
+      
+      //floatToString(tempSpeedString, gps.f_speed_kmph(), 1,2);
+      //itoa(gps.speed(),tempSpeedString,10);
+      //uoled.Text(0,0,SMALL_FONT,WHITE,tempSpeedString,0);
       GPSDataCollected = false;
     }
     
