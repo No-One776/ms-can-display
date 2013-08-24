@@ -51,9 +51,7 @@ unsigned int tempRPM;
 unsigned int tempSpeed4thOld;
 unsigned int tempSpeed5thOld;
 
-unsigned int tempA2D0;
 unsigned int tempA2D1;
-unsigned int tempOldA2D;
 
 boolean SwitchPressed;
 boolean GPSDataCollected;
@@ -92,8 +90,6 @@ void setup() {
 
   pinMode(ALIVE_LED, OUTPUT);
   
-  //Software serial connection to GPS module
-  
 }
 
 
@@ -117,16 +113,16 @@ void loop()
   
   
   
-  if (FlipMenu.check())
+  /*if (FlipMenu.check())
   {
         //this is actually really annoying in the car
-        /*Menu++;
+        Menu++;
         if(Menu == MENU_MAX)
             Menu = 0;  
     
         UpdateGaugeDetails();  
-        */
-  }
+        
+  }*/
 
   if(ReadGPS.check())
   {
@@ -134,31 +130,40 @@ void loop()
       while ((Serial1.available() > 0) && GPSDataCollected == false)
       {
         TempGPSChar = Serial1.read();
-        //DebugOut.print((char)TempGPSChar);
-           
+
         if (gps.encode(TempGPSChar))
         {
           GPSDataCollected = true;
         }
-        
-        //uoled.Text(0,0,SMALL_FONT,WHITE,"t",0);
       }
   }
+  
    
-                 
+  if (CheckSwitches.check()) {
+  		
+      //switch with 1k pullup connected to ADC0 to cycle menu		
+      tempA2D1 = analogRead(1);
+      
+      if(tempA2D1 < 200)		
+      {		
+        Menu++;		
+        if(Menu == MENU_MAX)		
+          Menu = 0;		
+			
+          UpdateGaugeDetails();		
+          SwitchPressed = false;		
+      }		
+  }      
 
   
   //Update the gauge pointer and text data. (From whatever source, CAN, GPS, etc...)
   if (UpdateGauge.check()) {
   
-    if(GPSDataCollected == true)
+    
+    if(GPSDataCollected == true && Menu == 6)
     {
        DrawPointer((int)gps.f_speed_kmph(), MSDataObjectList[Menu]._Max, MSDataObjectList[Menu]._Conversion);
-      
-      //floatToString(tempSpeedString, gps.f_speed_kmph(), 1,2);
-      //itoa(gps.speed(),tempSpeedString,10);
-      //uoled.Text(0,0,SMALL_FONT,WHITE,tempSpeedString,0);
-      GPSDataCollected = false;
+       GPSDataCollected = false;
     }
     
     /*if(MSDataObjectList[Menu]._Width == 1)
