@@ -166,19 +166,22 @@ void loop()
        GPSDataCollected = false;
     }
     
-    /*if(MSDataObjectList[Menu]._Width == 1)
+    if(Menu != 6)
     {
-      tempChar = GetDataValueFromCAN(MSDataObjectList[Menu]._Offset);
-      DrawPointer((byte)tempChar[0], MSDataObjectList[Menu]._Max, MSDataObjectList[Menu]._Conversion);
-    }
+      if(MSDataObjectList[Menu]._Width == 1)
+      {
+        tempChar = GetDataValueFromCAN(MSDataObjectList[Menu]._Offset);
+        DrawPointer((byte)tempChar[0], MSDataObjectList[Menu]._Max, MSDataObjectList[Menu]._Conversion);
+      }
     
-    if(MSDataObjectList[Menu]._Width == 2)
-    {
-      tempChar = GetDataValueFromCAN(MSDataObjectList[Menu]._Offset);
-      tempConverterGaugeFloat = ((byte)tempChar[0] * 256) + (byte)tempChar[1];
-      //tempConverterGaugeFloat = tempConverterGaugeFloat * MSDataObjectList[Menu]._Mult;
-      DrawPointer(tempConverterGaugeFloat, MSDataObjectList[Menu]._Max, MSDataObjectList[Menu]._Conversion);
-    }*/
+      if(MSDataObjectList[Menu]._Width == 2)
+      {
+        tempChar = GetDataValueFromCAN(MSDataObjectList[Menu]._Offset);
+        tempConverterGaugeFloat = ((byte)tempChar[0] * 256) + (byte)tempChar[1];
+        //tempConverterGaugeFloat = tempConverterGaugeFloat * MSDataObjectList[Menu]._Mult;
+        DrawPointer(tempConverterGaugeFloat, MSDataObjectList[Menu]._Max, MSDataObjectList[Menu]._Conversion);
+      }
+    }
   }
   
 }
