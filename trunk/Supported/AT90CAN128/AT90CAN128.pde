@@ -35,6 +35,7 @@ char Menu;                          //Global variable for which "Menu" item we a
 char* tempChar;
 float tempConverterGaugeFloat;
 uOLED uoled; 
+char GPSError;
 
 Metro UpdateGauge = Metro(100);       //Poll over CAN the MS every 100ms
 Metro FlipMenu = Metro(5000);         //Flip the menu ever 5 seconds
@@ -90,6 +91,8 @@ void setup() {
 
   pinMode(ALIVE_LED, OUTPUT);
   
+  GPSError = 0;
+  
 }
 
 
@@ -124,19 +127,21 @@ void loop()
         
   }*/
 
-  if(ReadGPS.check())
-  {
+  //if(ReadGPS.check())
+  //{
       //Add timeout and error counter to here!
-      while ((Serial1.available() > 0) && GPSDataCollected == false)
+      while ((Serial1.available() > 0) && GPSDataCollected == false && GPSError < 250)
       {
         TempGPSChar = Serial1.read();
+        GPSError++;
 
         if (gps.encode(TempGPSChar))
         {
+          GPSError = 0;
           GPSDataCollected = true;
         }
       }
-  }
+  //}
   
    
   if (CheckSwitches.check()) {
